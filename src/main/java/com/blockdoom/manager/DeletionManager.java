@@ -17,6 +17,7 @@ import java.util.*;
 
 /**
  * Manages the batched chunk-by-chunk deletion queue on the main thread, scoped per dimension.
+ * Completely scrubs each polled chunk in full per tick without partial block limits.
  */
 public class DeletionManager {
     private final BlockDoomPlugin plugin;
@@ -24,11 +25,15 @@ public class DeletionManager {
     private final StorageManager storageManager;
     private final NamespacedKey scrubKey;
 
-    private final LinkedList<ChunkPos> queue = new LinkedList<>();
+    private final LinkedList<ChunkPos> activeQueue = new LinkedList<>();
+    private final LinkedList<ChunkPos> backgroundQueue = new LinkedList<>();
+    private final Set<ChunkPos> queuedSet = new HashSet<>(); // O(1) lookup set
+
     private BukkitTask task;
     private Runnable completionCallback;
     private Material activeMaterial;
     private World activeDimension;
+    private boolean isPaused = false;
 
     public DeletionManager(BlockDoomPlugin plugin, ConfigManager configManager, StorageManager storageManager) {
         this.plugin = plugin;
@@ -41,14 +46,16 @@ public class DeletionManager {
         this.activeDimension = dimension;
         this.activeMaterial = material;
         this.completionCallback = completionCallback;
+        this.isPaused = false;
 
         UUID worldId = dimension.getUID();
         storageManager.addDeletedMaterial(worldId, material);
-        queue.clear();
+        activeQueue.clear();
+        queuedSet.clear();
 
         int targetCycle = storageManager.getDeletedMaterialsForWorld(worldId).size();
 
-        // Queue all currently loaded chunks in the dimension, prioritizing chunks near players
+        // Queue all currently loaded chunks in the dimension
         List<ChunkPos> loadedChunks = new ArrayList<>();
         for (Chunk chunk : dimension.getLoadedChunks()) {
             Integer scrubbedCycle = chunk.getPersistentDataContainer().get(scrubKey, PersistentDataType.INTEGER);
@@ -67,7 +74,8 @@ public class DeletionManager {
             return minDist;
         }));
 
-        queue.addAll(loadedChunks);
+        activeQueue.addAll(loadedChunks);
+        queuedSet.addAll(loadedChunks);
 
         if (task == null || task.isCancelled()) {
             task = Bukkit.getScheduler().runTaskTimer(plugin, this::processTick, 1L, 1L);
@@ -88,12 +96,20 @@ public class DeletionManager {
         }
 
         ChunkPos pos = ChunkPos.fromChunk(chunk);
-        if (!queue.contains(pos)) {
-            queue.addLast(pos);
+        if (queuedSet.add(pos)) {
+            backgroundQueue.addLast(pos);
             if (task == null || task.isCancelled()) {
                 task = Bukkit.getScheduler().runTaskTimer(plugin, this::processTick, 1L, 1L);
             }
         }
+    }
+
+    public void pause() {
+        this.isPaused = true;
+    }
+
+    public void resume() {
+        this.isPaused = false;
     }
 
     public void stop() {
@@ -101,31 +117,41 @@ public class DeletionManager {
             task.cancel();
             task = null;
         }
-        queue.clear();
+        activeQueue.clear();
+        backgroundQueue.clear();
+        queuedSet.clear();
         activeMaterial = null;
         activeDimension = null;
+        isPaused = false;
     }
 
     private void processTick() {
-        if (queue.isEmpty()) {
-            if (task != null) {
-                task.cancel();
-                task = null;
-            }
+        if (isPaused) {
+            return;
+        }
+
+        if (activeQueue.isEmpty()) {
             if (completionCallback != null && activeMaterial != null && activeDimension != null) {
                 completionCallback.run();
                 completionCallback = null;
                 activeMaterial = null;
                 activeDimension = null;
             }
-            return;
+            if (backgroundQueue.isEmpty()) {
+                if (task != null) {
+                    task.cancel();
+                    task = null;
+                }
+                return;
+            }
         }
 
         int chunksToProcess = configManager.getChunksPerTick();
-        int maxBlocks = configManager.getMaxBlocksPerChunkTick();
 
-        for (int c = 0; c < chunksToProcess && !queue.isEmpty(); c++) {
-            ChunkPos pos = queue.pollFirst();
+        for (int c = 0; c < chunksToProcess && (!activeQueue.isEmpty() || !backgroundQueue.isEmpty()); c++) {
+            ChunkPos pos = !activeQueue.isEmpty() ? activeQueue.pollFirst() : backgroundQueue.pollFirst();
+            queuedSet.remove(pos);
+
             World world = Bukkit.getWorld(pos.worldId());
             if (world == null || !world.isChunkLoaded(pos.x(), pos.z())) {
                 continue;
@@ -144,16 +170,16 @@ public class DeletionManager {
                 continue; // Already fully scrubbed
             }
 
-            int blocksDeleted = 0;
             int minY = world.getMinHeight();
             int maxY = world.getMaxHeight();
+            int blocksDeleted = 0;
 
-            for (int x = 0; x < 16 && blocksDeleted < maxBlocks; x++) {
-                for (int z = 0; z < 16 && blocksDeleted < maxBlocks; z++) {
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
                     int worldX = (pos.x() << 4) + x;
                     int worldZ = (pos.z() << 4) + z;
 
-                    for (int y = minY; y < maxY && blocksDeleted < maxBlocks; y++) {
+                    for (int y = minY; y < maxY; y++) {
                         if (configManager.isProtectPlayerBuilds() && storageManager.isProtected(worldId, worldX, y, worldZ)) {
                             continue;
                         }
@@ -172,14 +198,8 @@ public class DeletionManager {
                 }
             }
 
-            // If we hit the max block limit for this chunk, put it back at the front of the queue
-            if (blocksDeleted >= maxBlocks) {
-                queue.addFirst(pos);
-                break; // Stop processing further chunks this tick to preserve TPS
-            } else {
-                // Chunk completely scrubbed for this cycle! Save the cycle count into NBT.
-                chunk.getPersistentDataContainer().set(scrubKey, PersistentDataType.INTEGER, targetCycle);
-            }
+            // Chunk completely scrubbed in full! Save the cycle count into NBT.
+            chunk.getPersistentDataContainer().set(scrubKey, PersistentDataType.INTEGER, targetCycle);
         }
     }
 }

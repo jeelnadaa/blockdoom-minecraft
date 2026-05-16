@@ -1,74 +1,51 @@
-# ==================================================
-# BlockDoom Configuration
-# ==================================================
-
 game:
-  # The duration of each countdown cycle in seconds before a block is selected
-  timer-duration: 60
-  # Delay in seconds between revealing the block and starting the deletion process
-  reveal-delay: 5
-  # Scan radius around active players in chunks (default = 3, max recommended = 4)
-  scan-radius: 3
-  # If true, the next block to be deleted is selected and shown in the actionbar during the timer
-  show-next-block-during-timer: false
-  # If true, blocks manually placed by players will never be deleted
-  protect-player-builds: true
-  # If true, whenever settings are updated via command or GUI, config changes take effect instantly
-  auto-reload-on-config-change: true
-  # Enabled gameplay dimension names
-  enabled-dimensions:
+  timer-duration: 60      # Duration of each countdown cycle in seconds before a block is selected.
+  reveal-delay: 5         # Warning delay in seconds between revealing the block and starting deletion.
+  show-next-block-during-timer: false # If true, reveals the next block in actionbar during the timer.
+  protect-player-builds: true # If true, manually placed blocks are protected from deletion.
+  auto-reload-on-config-change: true # If true, updates via command or GUI take effect instantly.
+  enabled-dimensions:     # Dedicated gameplay world names used by the plugin.
     overworld: "blockdoom_overworld"
     nether: "blockdoom_nether"
     end: "blockdoom_end"
 
 performance:
-  # Number of chunks processed for deletion per server tick (20 ticks per second)
-  chunks-per-tick: 10
-  # Maximum blocks deleted inside a single chunk per tick (to avoid massive light/physics updates lagging)
-  max-blocks-per-chunk-tick: 500
+  chunks-per-tick: 10     # Number of loaded chunks processed for deletion per server tick (20 ticks/sec).
 
 blacklist:
-  # Blocks in this list will never be selected for deletion
   - BEDROCK
-  - OBSIDIAN
-  - CRYING_OBSIDIAN
   - NETHER_PORTAL
   - END_PORTAL
   - END_PORTAL_FRAME
-  - COMMAND_BLOCK
-  - CHAIN_COMMAND_BLOCK
-  - REPEATING_COMMAND_BLOCK
-  - STRUCTURE_BLOCK
-  - STRUCTURE_VOID
   - BARRIER
-  - REINFORCED_DEEPSLATE
+  - STRUCTURE_BLOCK
+  - JIGSAW
+  - COMMAND_BLOCK
+  - REPEATING_COMMAND_BLOCK
+  - CHAIN_COMMAND_BLOCK
   - AIR
   - CAVE_AIR
   - VOID_AIR
   - WATER
   - LAVA
-  - SPAWNER
-  - BEACON
-  - END_GATEWAY
+  - FIRE
+  - SOUL_FIRE
 
 messages:
-  prefix: "<dark_gray>[<red><bold>BlockDoom</bold></red>]</dark_gray> "
-  actionbar-timer: "<yellow>Next deletion in: <gold><bold>%time%</bold></gold></yellow>"
-  actionbar-timer-with-block: "<yellow>Next deletion: <red><bold>%block%</bold></red> in <gold><bold>%time%</bold></gold></yellow>"
-  actionbar-revealing: "<red><bold>%block%</bold> will be deleted in <gold>%time%s</gold>!</red>"
-  actionbar-paused: "<gray><italic>Deletion Cycle Paused</italic></gray>"
-  title-reveal: "<red><bold>%block%</bold></red>"
-  subtitle-reveal: "<gray>Will be erased in 5 seconds...</gray>"
-  title-deletion-start: "<dark_red><bold>DISINTEGRATION!</bold></dark_red>"
-  subtitle-deletion-start: "<yellow>All natural %block% is vanishing!</yellow>"
-  title-victory: "<gold><bold>VICTORY!</bold></gold>"
-  subtitle-victory: "<yellow>The Ender Dragon has been defeated!</yellow>"
-  title-defeat: "<dark_red><bold>DEFEAT!</bold></dark_red>"
-  subtitle-defeat: "<gray>Progression is impossible. Game Over.</gray>"
+  timer-tick: "<green>Time until next block deletion: <gold><bold>%time%s</bold></gold></green>"
+  timer-tick-known: "<green>Next deletion: <gold><bold>%block%</bold></gold> in <gold><bold>%time%s</bold></gold></green>"
+  block-reveal-title: "<red><bold>WARNING!</bold></red>"
+  block-reveal-subtitle: "<gold><bold>%block%</bold></gold> will be deleted across the world!"
+  deletion-start-title: "<dark_red><bold>DELETING %block%</bold></dark_red>"
+  deletion-start-subtitle: "<gray>All natural instances are disintegrating...</gray>"
+  victory-title: "<yellow><bold>VICTORY!</bold></yellow>"
+  victory-subtitle: "<green>The Ender Dragon is defeated! The world is saved!</green>"
+  defeat-title: "<dark_red><bold>DEFEAT!</bold></dark_red>"
+  defeat-subtitle: "<gray>Survival is impossible. The world has crumbled.</gray>"
 
 sounds:
-  timer-tick: "BLOCK_NOTE_BLOCK_BIT"
-  reveal: "ENTITY_ENDER_DRAGON_GROWL"
-  deletion-start: "ENTITY_GENERIC_EXPLODE"
+  timer-tick: "BLOCK_NOTE_BLOCK_HAT"
+  block-reveal: "ENTITY_ENDER_DRAGON_GROWL"
+  deletion-start: "ENTITY_WITHER_SPAWN"
   victory: "UI_TOAST_CHALLENGE_COMPLETE"
   defeat: "ENTITY_WITHER_DEATH"

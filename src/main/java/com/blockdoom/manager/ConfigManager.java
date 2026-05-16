@@ -1,54 +1,42 @@
 package com.blockdoom.manager;
 
 import com.blockdoom.BlockDoomPlugin;
-import com.blockdoom.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages configuration loading, live reloading, and on-the-fly value updates.
+ * Manages plugin configuration loading, saving, and live property access.
  */
 public class ConfigManager {
     private final BlockDoomPlugin plugin;
-    private Runnable reloadCallback;
+    private final File configFile;
+    private FileConfiguration config;
 
     private int timerDuration;
     private int revealDelay;
-    private int scanRadius;
     private boolean showNextBlockDuringTimer;
     private boolean protectPlayerBuilds;
     private boolean autoReloadOnConfigChange;
     private int chunksPerTick;
-    private int maxBlocksPerChunkTick;
+    private final Map<String, String> enabledDimensions = new ConcurrentHashMap<>();
+    private final Set<Material> blacklist = ConcurrentHashMap.newKeySet();
+    private final Map<String, String> messages = new ConcurrentHashMap<>();
+    private final Map<String, String> sounds = new ConcurrentHashMap<>();
 
-    private final Map<String, String> enabledDimensions = new HashMap<>();
-    private final Set<Material> blacklist = new HashSet<>();
-
-    private String prefix;
-    private String actionbarTimer;
-    private String actionbarTimerWithBlock;
-    private String actionbarRevealing;
-    private String actionbarPaused;
-    private String titleReveal;
-    private String subtitleReveal;
-    private String titleDeletionStart;
-    private String subtitleDeletionStart;
-    private String titleVictory;
-    private String subtitleVictory;
-    private String titleDefeat;
-    private String subtitleDefeat;
-
-    private String soundTimerTick;
-    private String soundReveal;
-    private String soundDeletionStart;
-    private String soundVictory;
-    private String soundDefeat;
+    private Runnable reloadCallback;
 
     public ConfigManager(BlockDoomPlugin plugin) {
         this.plugin = plugin;
-        plugin.saveDefaultConfig();
+        this.configFile = new File(plugin.getDataFolder(), "config.yml");
+        if (!configFile.exists()) {
+            plugin.saveResource("config.yml", false);
+        }
         loadConfig();
     }
 
@@ -56,163 +44,145 @@ public class ConfigManager {
         this.reloadCallback = reloadCallback;
     }
 
-    public void loadConfig() {
-        plugin.reloadConfig();
-        FileConfiguration config = plugin.getConfig();
+    public synchronized void loadConfig() {
+        config = YamlConfiguration.loadConfiguration(configFile);
 
-        this.timerDuration = config.getInt("game.timer-duration", 60);
-        this.revealDelay = config.getInt("game.reveal-delay", 5);
-        this.scanRadius = config.getInt("game.scan-radius", 3);
-        this.showNextBlockDuringTimer = config.getBoolean("game.show-next-block-during-timer", false);
-        this.protectPlayerBuilds = config.getBoolean("game.protect-player-builds", true);
-        this.autoReloadOnConfigChange = config.getBoolean("game.auto-reload-on-config-change", true);
+        timerDuration = config.getInt("game.timer-duration", 60);
+        revealDelay = config.getInt("game.reveal-delay", 5);
+        showNextBlockDuringTimer = config.getBoolean("game.show-next-block-during-timer", false);
+        protectPlayerBuilds = config.getBoolean("game.protect-player-builds", true);
+        autoReloadOnConfigChange = config.getBoolean("game.auto-reload-on-config-change", true);
 
-        this.chunksPerTick = config.getInt("performance.chunks-per-tick", 10);
-        this.maxBlocksPerChunkTick = config.getInt("performance.max-blocks-per-chunk-tick", 500);
-
-        this.enabledDimensions.clear();
+        enabledDimensions.clear();
         if (config.contains("game.enabled-dimensions")) {
             for (String key : config.getConfigurationSection("game.enabled-dimensions").getKeys(false)) {
-                this.enabledDimensions.put(key.toLowerCase(), config.getString("game.enabled-dimensions." + key));
+                enabledDimensions.put(key, config.getString("game.enabled-dimensions." + key));
             }
         } else {
-            this.enabledDimensions.put("overworld", "blockdoom_overworld");
-            this.enabledDimensions.put("nether", "blockdoom_nether");
-            this.enabledDimensions.put("end", "blockdoom_end");
+            enabledDimensions.put("overworld", "blockdoom_overworld");
+            enabledDimensions.put("nether", "blockdoom_nether");
+            enabledDimensions.put("end", "blockdoom_end");
         }
 
-        this.blacklist.clear();
-        List<String> blacklistStr = config.getStringList("blacklist");
-        for (String matName : blacklistStr) {
+        chunksPerTick = config.getInt("performance.chunks-per-tick", 10);
+
+        blacklist.clear();
+        List<String> bList = config.getStringList("blacklist");
+        for (String mName : bList) {
             try {
-                Material mat = Material.valueOf(matName.toUpperCase());
-                this.blacklist.add(mat);
+                blacklist.add(Material.valueOf(mName.toUpperCase()));
             } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid material in blacklist: " + matName);
+                plugin.getLogger().warning("Invalid material in blacklist: " + mName);
             }
         }
 
-        this.prefix = config.getString("messages.prefix", "<dark_gray>[<red><bold>BlockDoom</bold></red>]</dark_gray> ");
-        MessageUtil.setPrefix(this.prefix);
+        messages.clear();
+        if (config.contains("messages")) {
+            for (String key : config.getConfigurationSection("messages").getKeys(false)) {
+                messages.put(key, config.getString("messages." + key));
+            }
+        }
 
-        this.actionbarTimer = config.getString("messages.actionbar-timer", "<yellow>Next deletion in: <gold><bold>%time%</bold></gold></yellow>");
-        this.actionbarTimerWithBlock = config.getString("messages.actionbar-timer-with-block", "<yellow>Next deletion: <red><bold>%block%</bold></red> in <gold><bold>%time%</bold></gold></yellow>");
-        this.actionbarRevealing = config.getString("messages.actionbar-revealing", "<red><bold>%block%</bold> will be deleted in <gold>%time%s</gold>!</red>");
-        this.actionbarPaused = config.getString("messages.actionbar-paused", "<gray><italic>Deletion Cycle Paused</italic></gray>");
-        this.titleReveal = config.getString("messages.title-reveal", "<red><bold>%block%</bold></red>");
-        this.subtitleReveal = config.getString("messages.subtitle-reveal", "<gray>Will be erased in 5 seconds...</gray>");
-        this.titleDeletionStart = config.getString("messages.title-deletion-start", "<dark_red><bold>DISINTEGRATION!</bold></dark_red>");
-        this.subtitleDeletionStart = config.getString("messages.subtitle-deletion-start", "<yellow>All natural %block% is vanishing!</yellow>");
-        this.titleVictory = config.getString("messages.title-victory", "<gold><bold>VICTORY!</bold></gold>");
-        this.subtitleVictory = config.getString("messages.subtitle-victory", "<yellow>The Ender Dragon has been defeated!</yellow>");
-        this.titleDefeat = config.getString("messages.title-defeat", "<dark_red><bold>DEFEAT!</bold></dark_red>");
-        this.subtitleDefeat = config.getString("messages.subtitle-defeat", "<gray>Progression is impossible. Game Over.</gray>");
+        sounds.clear();
+        if (config.contains("sounds")) {
+            for (String key : config.getConfigurationSection("sounds").getKeys(false)) {
+                sounds.put(key, config.getString("sounds." + key));
+            }
+        }
+    }
 
-        this.soundTimerTick = config.getString("sounds.timer-tick", "BLOCK_NOTE_BLOCK_BIT");
-        this.soundReveal = config.getString("sounds.reveal", "ENTITY_ENDER_DRAGON_GROWL");
-        this.soundDeletionStart = config.getString("sounds.deletion-start", "ENTITY_GENERIC_EXPLODE");
-        this.soundVictory = config.getString("sounds.victory", "UI_TOAST_CHALLENGE_COMPLETE");
-        this.soundDefeat = config.getString("sounds.defeat", "ENTITY_WITHER_DEATH");
+    public synchronized void saveConfig() {
+        config.set("game.timer-duration", timerDuration);
+        config.set("game.reveal-delay", revealDelay);
+        config.set("game.show-next-block-during-timer", showNextBlockDuringTimer);
+        config.set("game.protect-player-builds", protectPlayerBuilds);
+        config.set("game.auto-reload-on-config-change", autoReloadOnConfigChange);
+        config.set("performance.chunks-per-tick", chunksPerTick);
+
+        List<String> bList = new ArrayList<>();
+        for (Material m : blacklist) bList.add(m.name());
+        config.set("blacklist", bList);
+
+        try {
+            config.save(configFile);
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not save config.yml: " + e.getMessage());
+        }
     }
 
     private void triggerAutoReload() {
+        saveConfig();
         if (autoReloadOnConfigChange && reloadCallback != null) {
             reloadCallback.run();
-            MessageUtil.broadcast("<green>BlockDoom configuration updated and auto-reloaded successfully!</green>");
+            plugin.getServer().broadcastMessage("§a[BlockDoom] Configuration updated and auto-reloaded successfully!");
         }
     }
 
-    public void setTimerDuration(int seconds) {
-        this.timerDuration = Math.max(5, seconds);
-        plugin.getConfig().set("game.timer-duration", this.timerDuration);
-        plugin.saveConfig();
+    public int getTimerDuration() { return timerDuration; }
+    public void setTimerDuration(int timerDuration) {
+        this.timerDuration = Math.max(5, timerDuration);
         triggerAutoReload();
     }
 
-    public void setScanRadius(int radius) {
-        this.scanRadius = Math.max(1, Math.min(8, radius));
-        plugin.getConfig().set("game.scan-radius", this.scanRadius);
-        plugin.saveConfig();
+    public int getRevealDelay() { return revealDelay; }
+    public boolean isShowNextBlockDuringTimer() { return showNextBlockDuringTimer; }
+    public void setShowNextBlockDuringTimer(boolean showNextBlockDuringTimer) {
+        this.showNextBlockDuringTimer = showNextBlockDuringTimer;
         triggerAutoReload();
     }
 
-    public void setShowNextBlockDuringTimer(boolean show) {
-        this.showNextBlockDuringTimer = show;
-        plugin.getConfig().set("game.show-next-block-during-timer", show);
-        plugin.saveConfig();
+    public boolean isProtectPlayerBuilds() { return protectPlayerBuilds; }
+    public void setProtectPlayerBuilds(boolean protectPlayerBuilds) {
+        this.protectPlayerBuilds = protectPlayerBuilds;
         triggerAutoReload();
     }
 
-    public void setProtectPlayerBuilds(boolean protect) {
-        this.protectPlayerBuilds = protect;
-        plugin.getConfig().set("game.protect-player-builds", protect);
-        plugin.saveConfig();
+    public boolean isAutoReloadOnConfigChange() { return autoReloadOnConfigChange; }
+    public void setAutoReloadOnConfigChange(boolean autoReloadOnConfigChange) {
+        this.autoReloadOnConfigChange = autoReloadOnConfigChange;
         triggerAutoReload();
     }
 
-    public void setAutoReloadOnConfigChange(boolean autoReload) {
-        this.autoReloadOnConfigChange = autoReload;
-        plugin.getConfig().set("game.auto-reload-on-config-change", autoReload);
-        plugin.saveConfig();
+    public int getChunksPerTick() { return chunksPerTick; }
+    public void setChunksPerTick(int chunksPerTick) {
+        this.chunksPerTick = Math.max(1, chunksPerTick);
         triggerAutoReload();
     }
 
-    public void setChunksPerTick(int chunks) {
-        this.chunksPerTick = Math.max(1, Math.min(100, chunks));
-        plugin.getConfig().set("performance.chunks-per-tick", this.chunksPerTick);
-        plugin.saveConfig();
-        triggerAutoReload();
-    }
+    public Map<String, String> getEnabledDimensions() { return enabledDimensions; }
+    public Set<Material> getBlacklist() { return blacklist; }
 
-    public void addBlacklistMaterial(Material mat) {
-        if (mat == null || blacklist.contains(mat)) return;
-        blacklist.add(mat);
-        List<String> list = plugin.getConfig().getStringList("blacklist");
-        if (!list.contains(mat.name())) {
-            list.add(mat.name());
-            plugin.getConfig().set("blacklist", list);
-            plugin.saveConfig();
+    public void addBlacklistMaterial(Material material) {
+        if (material != null && material.isBlock()) {
+            blacklist.add(material);
             triggerAutoReload();
         }
     }
 
-    public void removeBlacklistMaterial(Material mat) {
-        if (mat == null || !blacklist.contains(mat)) return;
-        blacklist.remove(mat);
-        List<String> list = plugin.getConfig().getStringList("blacklist");
-        list.remove(mat.name());
-        plugin.getConfig().set("blacklist", list);
-        plugin.saveConfig();
-        triggerAutoReload();
+    public void removeBlacklistMaterial(Material material) {
+        if (material != null) {
+            blacklist.remove(material);
+            triggerAutoReload();
+        }
     }
 
-    public int getTimerDuration() { return timerDuration; }
-    public int getRevealDelay() { return revealDelay; }
-    public int getScanRadius() { return scanRadius; }
-    public boolean isShowNextBlockDuringTimer() { return showNextBlockDuringTimer; }
-    public boolean isProtectPlayerBuilds() { return protectPlayerBuilds; }
-    public boolean isAutoReloadOnConfigChange() { return autoReloadOnConfigChange; }
-    public int getChunksPerTick() { return chunksPerTick; }
-    public int getMaxBlocksPerChunkTick() { return maxBlocksPerChunkTick; }
-    public Map<String, String> getEnabledDimensions() { return enabledDimensions; }
-    public Set<Material> getBlacklist() { return blacklist; }
+    public String getActionbarTimer() { return messages.getOrDefault("timer-tick", "<green>Time until next block deletion: <gold><bold>%time%s</bold></gold></green>"); }
+    public String getActionbarTimerWithBlock() { return messages.getOrDefault("timer-tick-known", "<green>Next deletion: <gold><bold>%block%</bold></gold> in <gold><bold>%time%s</bold></gold></green>"); }
+    public String getActionbarRevealing() { return messages.getOrDefault("block-revealing", "<red><bold>WARNING: %block% vaporizing in %time%s!</bold></red>"); }
+    public String getActionbarPaused() { return messages.getOrDefault("game-paused", "<yellow><bold>GAME PAUSED</bold></yellow>"); }
 
-    public String getActionbarTimer() { return actionbarTimer; }
-    public String getActionbarTimerWithBlock() { return actionbarTimerWithBlock; }
-    public String getActionbarRevealing() { return actionbarRevealing; }
-    public String getActionbarPaused() { return actionbarPaused; }
-    public String getTitleReveal() { return titleReveal; }
-    public String getSubtitleReveal() { return subtitleReveal; }
-    public String getTitleDeletionStart() { return titleDeletionStart; }
-    public String getSubtitleDeletionStart() { return subtitleDeletionStart; }
-    public String getTitleVictory() { return titleVictory; }
-    public String getSubtitleVictory() { return subtitleVictory; }
-    public String getTitleDefeat() { return titleDefeat; }
-    public String getSubtitleDefeat() { return subtitleDefeat; }
+    public String getTitleReveal() { return messages.getOrDefault("block-reveal-title", "<red><bold>WARNING!</bold></red>"); }
+    public String getSubtitleReveal() { return messages.getOrDefault("block-reveal-subtitle", "<gold><bold>%block%</bold></gold> will be deleted across the world!"); }
+    public String getTitleDeletionStart() { return messages.getOrDefault("deletion-start-title", "<dark_red><bold>DELETING %block%</bold></dark_red>"); }
+    public String getSubtitleDeletionStart() { return messages.getOrDefault("deletion-start-subtitle", "<gray>All natural instances are disintegrating...</gray>"); }
+    public String getTitleVictory() { return messages.getOrDefault("victory-title", "<yellow><bold>VICTORY!</bold></yellow>"); }
+    public String getSubtitleVictory() { return messages.getOrDefault("victory-subtitle", "<green>The Ender Dragon is defeated! The world is saved!</green>"); }
+    public String getTitleDefeat() { return messages.getOrDefault("defeat-title", "<dark_red><bold>DEFEAT!</bold></dark_red>"); }
+    public String getSubtitleDefeat() { return messages.getOrDefault("defeat-subtitle", "<gray>Survival is impossible. The world has crumbled.</gray>"); }
 
-    public String getSoundTimerTick() { return soundTimerTick; }
-    public String getSoundReveal() { return soundReveal; }
-    public String getSoundDeletionStart() { return soundDeletionStart; }
-    public String getSoundVictory() { return soundVictory; }
-    public String getSoundDefeat() { return soundDefeat; }
+    public String getSoundTimerTick() { return sounds.getOrDefault("timer-tick", "BLOCK_NOTE_BLOCK_HAT"); }
+    public String getSoundReveal() { return sounds.getOrDefault("block-reveal", "ENTITY_ENDER_DRAGON_GROWL"); }
+    public String getSoundDeletionStart() { return sounds.getOrDefault("deletion-start", "ENTITY_WITHER_SPAWN"); }
+    public String getSoundVictory() { return sounds.getOrDefault("victory", "UI_TOAST_CHALLENGE_COMPLETE"); }
+    public String getSoundDefeat() { return sounds.getOrDefault("defeat", "ENTITY_WITHER_DEATH"); }
 }

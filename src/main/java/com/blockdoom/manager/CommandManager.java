@@ -115,7 +115,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             }
             case "config" -> {
                 if (args.length < 3) {
-                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom config <timer|radius|shownext|speed|protect|autoreload> <value></red>");
+                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom config <timer|shownext|speed|protect|autoreload> <value></red>");
                     return true;
                 }
                 String setting = args[1].toLowerCase();
@@ -140,9 +140,6 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                     if (setting.equals("timer")) {
                         configManager.setTimerDuration(val);
                         MessageUtil.sendMessage(sender, "<green>Timer duration updated to " + val + " seconds.</green>");
-                    } else if (setting.equals("radius")) {
-                        configManager.setScanRadius(val);
-                        MessageUtil.sendMessage(sender, "<green>Scan radius updated to " + val + " chunks.</green>");
                     } else if (setting.equals("speed")) {
                         configManager.setChunksPerTick(val);
                         MessageUtil.sendMessage(sender, "<green>Deletion speed updated to " + val + " chunks/tick.</green>");
@@ -170,7 +167,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom reload</yellow> <gray>- Reloads config.yml and storage</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcestart</yellow> <gray>- Forcefully starts the game</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcedelete <block></yellow> <gray>- Forces immediate deletion of a block</gray>");
-        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom config <timer|radius|shownext|speed|protect|autoreload> <val></yellow> <gray>- Updates config on the fly</gray>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom config <timer|shownext|speed|protect|autoreload> <val></yellow> <gray>- Updates config on the fly</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom blacklist <add|remove> <block></yellow> <gray>- Manages the block blacklist</gray>");
     }
 
@@ -197,7 +194,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 if (s.startsWith(args[0].toLowerCase())) completions.add(s);
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("config")) {
-            List<String> subs = Arrays.asList("timer", "radius", "shownext", "speed", "protect", "autoreload");
+            List<String> subs = Arrays.asList("timer", "shownext", "speed", "protect", "autoreload");
             for (String s : subs) {
                 if (s.startsWith(args[1].toLowerCase())) completions.add(s);
             }

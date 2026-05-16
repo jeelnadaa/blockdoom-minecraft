@@ -6,14 +6,13 @@ import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Asynchronously scans loaded chunk snapshots near active players to select valid natural blocks.
+ * Asynchronously scans all loaded chunk snapshots across the dimension to select valid natural blocks.
  */
 public class BlockSelectionManager {
     private final BlockDoomPlugin plugin;
@@ -27,25 +26,12 @@ public class BlockSelectionManager {
     }
 
     public void selectBlockAsync(World dimension, Consumer<Material> callback) {
-        int radius = configManager.getScanRadius();
         Set<ChunkSnapshot> snapshots = new HashSet<>();
         UUID worldId = dimension.getUID();
 
-        // Gather chunk snapshots on main thread for chunks around active players
-        for (Player player : dimension.getPlayers()) {
-            Chunk center = player.getLocation().getChunk();
-            int cX = center.getX();
-            int cZ = center.getZ();
-
-            for (int dx = -radius; dx <= radius; dx++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    int tX = cX + dx;
-                    int tZ = cZ + dz;
-                    if (dimension.isChunkLoaded(tX, tZ)) {
-                        snapshots.add(dimension.getChunkAt(tX, tZ).getChunkSnapshot());
-                    }
-                }
-            }
+        // Gather chunk snapshots of all currently loaded chunks across the entire dimension
+        for (Chunk chunk : dimension.getLoadedChunks()) {
+            snapshots.add(chunk.getChunkSnapshot());
         }
 
         if (snapshots.isEmpty()) {
@@ -68,8 +54,8 @@ public class BlockSelectionManager {
                     for (int z = 0; z < 16; z++) {
                         int worldX = (sX << 4) + x;
                         int worldZ = (sZ << 4) + z;
-                        // Sample blocks with step 3 in Y for performance optimization
-                        for (int y = minY; y < maxY; y += 3) {
+                        // Exact block inspection across Y column
+                        for (int y = minY; y < maxY; y++) {
                             if (configManager.isProtectPlayerBuilds() && storageManager.isProtected(worldId, worldX, y, worldZ)) {
                                 continue;
                             }
@@ -77,7 +63,7 @@ public class BlockSelectionManager {
                             if (!mat.isBlock() || mat.isAir() || mat == Material.WATER || mat == Material.LAVA) {
                                 continue;
                             }
-                            if (blacklist.contains(mat) || storageManager.isMaterialDeletedGlobally(mat)) {
+                            if (blacklist.contains(mat) || storageManager.isMaterialDeletedInWorld(worldId, mat)) {
                                 continue;
                             }
                             materialCounts.put(mat, materialCounts.getOrDefault(mat, 0) + 1);

@@ -10,6 +10,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
+import java.util.UUID;
+
 /**
  * Listens to block placement and break events to maintain protection of player-placed blocks.
  */
@@ -35,8 +37,8 @@ public class BlockListener implements Listener {
         if (!configManager.isProtectPlayerBuilds()) {
             return;
         }
-        // Only protect if the material is currently in the deleted registry
-        if (storageManager.isMaterialDeletedGlobally(event.getBlockPlaced().getType())) {
+        UUID worldId = event.getBlockPlaced().getWorld().getUID();
+        if (storageManager.isMaterialDeletedInWorld(worldId, event.getBlockPlaced().getType())) {
             placementTrackingManager.protectBlock(event.getBlockPlaced());
         }
     }
@@ -50,7 +52,8 @@ public class BlockListener implements Listener {
         if (!configManager.isProtectPlayerBuilds()) {
             return;
         }
-        if (storageManager.isMaterialDeletedGlobally(event.getBlock().getType())) {
+        UUID worldId = event.getBlock().getWorld().getUID();
+        if (storageManager.isMaterialDeletedInWorld(worldId, event.getBlock().getType())) {
             placementTrackingManager.unprotectBlock(event.getBlock());
         }
     }

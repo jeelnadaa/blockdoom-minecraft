@@ -36,7 +36,7 @@ public class GUIListener implements Listener {
             ClickType click = event.getClick();
             int slot = event.getRawSlot();
 
-            if (slot == 10) { // Timer Duration
+            if (slot == 11) { // Timer Duration
                 int current = configManager.getTimerDuration();
                 if (click == ClickType.SHIFT_LEFT) current += 60;
                 else if (click == ClickType.SHIFT_RIGHT) current -= 60;
@@ -47,37 +47,21 @@ public class GUIListener implements Listener {
                 SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
                 MessageUtil.sendMessage(player, "<green>Timer duration changed to <gold><bold>" + configManager.getTimerDuration() + "s</bold></gold></green>");
                 ConfigGUI.openMainConfig(player, configManager);
-            } else if (slot == 11) { // Auto Reload Toggle
-                boolean current = configManager.isAutoReloadOnConfigChange();
-                boolean next = !current;
-                configManager.setAutoReloadOnConfigChange(next);
-                SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
-                MessageUtil.sendMessage(player, "<green>Auto-reload on config change updated to: <gold><bold>" + next + "</bold></gold></green>");
-                ConfigGUI.openMainConfig(player, configManager);
-            } else if (slot == 12) { // Scan Radius
-                int current = configManager.getScanRadius();
-                if (click == ClickType.LEFT || click == ClickType.SHIFT_LEFT) current += 1;
-                else if (click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT) current -= 1;
-
-                configManager.setScanRadius(current);
-                SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
-                MessageUtil.sendMessage(player, "<green>Scan radius changed to <gold><bold>" + configManager.getScanRadius() + " chunks</bold></gold></green>");
-                ConfigGUI.openMainConfig(player, configManager);
-            } else if (slot == 14) { // Show Next Block Toggle
+            } else if (slot == 12) { // Show Next Block Toggle
                 boolean current = configManager.isShowNextBlockDuringTimer();
                 boolean next = !current;
                 configManager.setShowNextBlockDuringTimer(next);
                 SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
                 MessageUtil.sendMessage(player, "<green>Show next block early updated to: <gold><bold>" + next + "</bold></gold></green>");
                 ConfigGUI.openMainConfig(player, configManager);
-            } else if (slot == 15) { // Protect Player Builds Toggle
+            } else if (slot == 13) { // Protect Player Builds Toggle
                 boolean current = configManager.isProtectPlayerBuilds();
                 boolean next = !current;
                 configManager.setProtectPlayerBuilds(next);
                 SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
                 MessageUtil.sendMessage(player, "<green>Protect player builds updated to: <gold><bold>" + next + "</bold></gold></green>");
                 ConfigGUI.openMainConfig(player, configManager);
-            } else if (slot == 16) { // Chunks per tick
+            } else if (slot == 14) { // Chunks per tick
                 int current = configManager.getChunksPerTick();
                 if (click == ClickType.LEFT || click == ClickType.SHIFT_LEFT) current += 5;
                 else if (click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT) current -= 5;
@@ -85,6 +69,13 @@ public class GUIListener implements Listener {
                 configManager.setChunksPerTick(current);
                 SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
                 MessageUtil.sendMessage(player, "<green>Deletion speed changed to <gold><bold>" + configManager.getChunksPerTick() + " chunks/tick</bold></gold></green>");
+                ConfigGUI.openMainConfig(player, configManager);
+            } else if (slot == 15) { // Auto Reload Toggle
+                boolean current = configManager.isAutoReloadOnConfigChange();
+                boolean next = !current;
+                configManager.setAutoReloadOnConfigChange(next);
+                SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
+                MessageUtil.sendMessage(player, "<green>Auto-reload on config change updated to: <gold><bold>" + next + "</bold></gold></green>");
                 ConfigGUI.openMainConfig(player, configManager);
             } else if (slot == 22) { // Manage Blacklist Button
                 SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.0f);

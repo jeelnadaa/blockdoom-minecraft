@@ -68,6 +68,10 @@ public class TimerManager {
                 gameManager.startRevealPhase();
             }
         } else if (state == GameState.REVEALING) {
+            if (gameManager.getSelectedMaterial() == null) {
+                // Waiting for async block selection to finish, hold the reveal countdown
+                return;
+            }
             if (remainingRevealSeconds > 0) {
                 uiManager.broadcastRevealingTick(gameManager.getSelectedMaterial(), remainingRevealSeconds);
                 remainingRevealSeconds--;

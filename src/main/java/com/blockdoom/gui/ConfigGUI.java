@@ -30,7 +30,7 @@ public final class ConfigGUI {
         ItemStack glass = createItem(Material.BLACK_STAINED_GLASS_PANE, "<gray> </gray>");
         for (int i = 0; i < inv.getSize(); i++) inv.setItem(i, glass);
 
-        // Slot 10: Timer Duration
+        // Slot 11: Timer Duration
         List<String> timerLore = List.of(
                 "<gray>Current: <gold><bold>" + configManager.getTimerDuration() + "s</bold></gold></gray>",
                 "",
@@ -39,28 +39,9 @@ public final class ConfigGUI {
                 "<yellow>Shift-Left: <green>+60s</green></yellow>",
                 "<yellow>Shift-Right: <red>-60s</red></yellow>"
         );
-        inv.setItem(10, createItem(Material.CLOCK, "<gold><bold>Timer Duration</bold></gold>", timerLore));
+        inv.setItem(11, createItem(Material.CLOCK, "<gold><bold>Timer Duration</bold></gold>", timerLore));
 
-        // Slot 11: Auto Reload Config
-        boolean autoReload = configManager.isAutoReloadOnConfigChange();
-        String autoStr = autoReload ? "<green><bold>TRUE</bold></green>" : "<red><bold>FALSE</bold></red>";
-        List<String> autoLore = List.of(
-                "<gray>Current: " + autoStr + "</gray>",
-                "",
-                "<yellow>Click to toggle auto-reload on config changes</yellow>"
-        );
-        inv.setItem(11, createItem(Material.REPEATER, "<yellow><bold>Auto Reload Config</bold></yellow>", autoLore));
-
-        // Slot 12: Scan Radius
-        List<String> radiusLore = List.of(
-                "<gray>Current: <aqua><bold>" + configManager.getScanRadius() + " chunks</bold></aqua></gray>",
-                "",
-                "<yellow>Left-Click: <green>+1</green></yellow>",
-                "<yellow>Right-Click: <red>-1</red></yellow>"
-        );
-        inv.setItem(12, createItem(Material.COMPASS, "<aqua><bold>Scan Radius</bold></aqua>", radiusLore));
-
-        // Slot 14: Show Next Block
+        // Slot 12: Show Next Block
         boolean showNext = configManager.isShowNextBlockDuringTimer();
         String showNextStr = showNext ? "<green><bold>TRUE</bold></green>" : "<red><bold>FALSE</bold></red>";
         List<String> showLore = List.of(
@@ -69,9 +50,9 @@ public final class ConfigGUI {
                 "<yellow>Click to toggle setting</yellow>"
         );
         Material showMat = showNext ? Material.REDSTONE_TORCH : Material.LEVER;
-        inv.setItem(14, createItem(showMat, "<yellow><bold>Show Next Block Early</bold></yellow>", showLore));
+        inv.setItem(12, createItem(showMat, "<yellow><bold>Show Next Block Early</bold></yellow>", showLore));
 
-        // Slot 15: Protect Player Builds
+        // Slot 13: Protect Player Builds
         boolean protect = configManager.isProtectPlayerBuilds();
         String protectStr = protect ? "<green><bold>TRUE</bold></green>" : "<red><bold>FALSE</bold></red>";
         List<String> protectLore = List.of(
@@ -79,16 +60,26 @@ public final class ConfigGUI {
                 "",
                 "<yellow>Click to toggle protection of player placed blocks</yellow>"
         );
-        inv.setItem(15, createItem(Material.SHIELD, "<yellow><bold>Protect Player Builds</bold></yellow>", protectLore));
+        inv.setItem(13, createItem(Material.SHIELD, "<yellow><bold>Protect Player Builds</bold></yellow>", protectLore));
 
-        // Slot 16: Chunks Per Tick
+        // Slot 14: Chunks Per Tick
         List<String> chunksLore = List.of(
                 "<gray>Current: <light_purple><bold>" + configManager.getChunksPerTick() + " chunks/tick</bold></light_purple></gray>",
                 "",
                 "<yellow>Left-Click: <green>+5</green></yellow>",
                 "<yellow>Right-Click: <red>-5</red></yellow>"
         );
-        inv.setItem(16, createItem(Material.MINECART, "<light_purple><bold>Deletion Speed (Chunks/Tick)</bold></light_purple>", chunksLore));
+        inv.setItem(14, createItem(Material.MINECART, "<light_purple><bold>Deletion Speed (Chunks/Tick)</bold></light_purple>", chunksLore));
+
+        // Slot 15: Auto Reload Config
+        boolean autoReload = configManager.isAutoReloadOnConfigChange();
+        String autoStr = autoReload ? "<green><bold>TRUE</bold></green>" : "<red><bold>FALSE</bold></red>";
+        List<String> autoLore = List.of(
+                "<gray>Current: " + autoStr + "</gray>",
+                "",
+                "<yellow>Click to toggle auto-reload on config changes</yellow>"
+        );
+        inv.setItem(15, createItem(Material.REPEATER, "<yellow><bold>Auto Reload Config</bold></yellow>", autoLore));
 
         // Slot 22: Manage Blacklist Button
         List<String> blLore = List.of(
