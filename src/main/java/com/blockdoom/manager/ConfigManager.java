@@ -1,0 +1,146 @@
+package com.blockdoom.manager;
+
+import com.blockdoom.BlockDoomPlugin;
+import com.blockdoom.util.MessageUtil;
+import org.bukkit.Material;
+import org.bukkit.configuration.file.FileConfiguration;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Manages configuration loading, live reloading, and on-the-fly value updates.
+ */
+public class ConfigManager {
+    private final BlockDoomPlugin plugin;
+
+    private int timerDuration;
+    private int revealDelay;
+    private int scanRadius;
+    private int chunksPerTick;
+    private int maxBlocksPerChunkTick;
+
+    private final Map<String, String> enabledDimensions = new HashMap<>();
+    private final Set<Material> blacklist = new HashSet<>();
+
+    private String prefix;
+    private String actionbarTimer;
+    private String actionbarRevealing;
+    private String actionbarPaused;
+    private String titleReveal;
+    private String subtitleReveal;
+    private String titleDeletionStart;
+    private String subtitleDeletionStart;
+    private String titleVictory;
+    private String subtitleVictory;
+    private String titleDefeat;
+    private String subtitleDefeat;
+
+    private String soundTimerTick;
+    private String soundReveal;
+    private String soundDeletionStart;
+    private String soundVictory;
+    private String soundDefeat;
+
+    public ConfigManager(BlockDoomPlugin plugin) {
+        this.plugin = plugin;
+        plugin.saveDefaultConfig();
+        loadConfig();
+    }
+
+    public void loadConfig() {
+        plugin.reloadConfig();
+        FileConfiguration config = plugin.getConfig();
+
+        this.timerDuration = config.getInt("game.timer-duration", 60);
+        this.revealDelay = config.getInt("game.reveal-delay", 5);
+        this.scanRadius = config.getInt("game.scan-radius", 3);
+
+        this.chunksPerTick = config.getInt("performance.chunks-per-tick", 10);
+        this.maxBlocksPerChunkTick = config.getInt("performance.max-blocks-per-chunk-tick", 500);
+
+        this.enabledDimensions.clear();
+        if (config.contains("game.enabled-dimensions")) {
+            for (String key : config.getConfigurationSection("game.enabled-dimensions").getKeys(false)) {
+                this.enabledDimensions.put(key.toLowerCase(), config.getString("game.enabled-dimensions." + key));
+            }
+        } else {
+            this.enabledDimensions.put("overworld", "blockdoom_overworld");
+            this.enabledDimensions.put("nether", "blockdoom_nether");
+            this.enabledDimensions.put("end", "blockdoom_end");
+        }
+
+        this.blacklist.clear();
+        List<String> blacklistStr = config.getStringList("blacklist");
+        for (String matName : blacklistStr) {
+            try {
+                Material mat = Material.valueOf(matName.toUpperCase());
+                this.blacklist.add(mat);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid material in blacklist: " + matName);
+            }
+        }
+
+        this.prefix = config.getString("messages.prefix", "<dark_gray>[<red><bold>BlockDoom</bold></red>]</dark_gray> ");
+        MessageUtil.setPrefix(this.prefix);
+
+        this.actionbarTimer = config.getString("messages.actionbar-timer", "<yellow>Next deletion in: <gold><bold>%time%</bold></gold></yellow>");
+        this.actionbarRevealing = config.getString("messages.actionbar-revealing", "<red><bold>%block%</bold> will be deleted in <gold>%time%s</gold>!</red>");
+        this.actionbarPaused = config.getString("messages.actionbar-paused", "<gray><italic>Deletion Cycle Paused</italic></gray>");
+        this.titleReveal = config.getString("messages.title-reveal", "<red><bold>%block%</bold></red>");
+        this.subtitleReveal = config.getString("messages.subtitle-reveal", "<gray>Will be erased in 5 seconds...</gray>");
+        this.titleDeletionStart = config.getString("messages.title-deletion-start", "<dark_red><bold>DISINTEGRATION!</bold></dark_red>");
+        this.subtitleDeletionStart = config.getString("messages.subtitle-deletion-start", "<yellow>All natural %block% is vanishing!</yellow>");
+        this.titleVictory = config.getString("messages.title-victory", "<gold><bold>VICTORY!</bold></gold>");
+        this.subtitleVictory = config.getString("messages.subtitle-victory", "<yellow>The Ender Dragon has been defeated!</yellow>");
+        this.titleDefeat = config.getString("messages.title-defeat", "<dark_red><bold>DEFEAT!</bold></dark_red>");
+        this.subtitleDefeat = config.getString("messages.subtitle-defeat", "<gray>Progression is impossible. Game Over.</gray>");
+
+        this.soundTimerTick = config.getString("sounds.timer-tick", "BLOCK_NOTE_BLOCK_BIT");
+        this.soundReveal = config.getString("sounds.reveal", "ENTITY_ENDER_DRAGON_GROWL");
+        this.soundDeletionStart = config.getString("sounds.deletion-start", "ENTITY_GENERIC_EXPLODE");
+        this.soundVictory = config.getString("sounds.victory", "UI_TOAST_CHALLENGE_COMPLETE");
+        this.soundDefeat = config.getString("sounds.defeat", "ENTITY_WITHER_DEATH");
+    }
+
+    public void setTimerDuration(int seconds) {
+        this.timerDuration = seconds;
+        plugin.getConfig().set("game.timer-duration", seconds);
+        plugin.saveConfig();
+    }
+
+    public void setScanRadius(int radius) {
+        this.scanRadius = radius;
+        plugin.getConfig().set("game.scan-radius", radius);
+        plugin.saveConfig();
+    }
+
+    public int getTimerDuration() { return timerDuration; }
+    public int getRevealDelay() { return revealDelay; }
+    public int getScanRadius() { return scanRadius; }
+    public int getChunksPerTick() { return chunksPerTick; }
+    public int getMaxBlocksPerChunkTick() { return maxBlocksPerChunkTick; }
+    public Map<String, String> getEnabledDimensions() { return enabledDimensions; }
+    public Set<Material> getBlacklist() { return blacklist; }
+
+    public String getActionbarTimer() { return actionbarTimer; }
+    public String getActionbarRevealing() { return actionbarRevealing; }
+    public String getActionbarPaused() { return actionbarPaused; }
+    public String getTitleReveal() { return titleReveal; }
+    public String getSubtitleReveal() { return subtitleReveal; }
+    public String getTitleDeletionStart() { return titleDeletionStart; }
+    public String getSubtitleDeletionStart() { return subtitleDeletionStart; }
+    public String getTitleVictory() { return titleVictory; }
+    public String getSubtitleVictory() { return subtitleVictory; }
+    public String getTitleDefeat() { return titleDefeat; }
+    public String getSubtitleDefeat() { return subtitleDefeat; }
+
+    public String getSoundTimerTick() { return soundTimerTick; }
+    public String getSoundReveal() { return soundReveal; }
+    public String getSoundDeletionStart() { return soundDeletionStart; }
+    public String getSoundVictory() { return soundVictory; }
+    public String getSoundDefeat() { return soundDefeat; }
+}

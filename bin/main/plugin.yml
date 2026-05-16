@@ -1,0 +1,17 @@
+name: BlockDoom
+version: '${version}'
+main: com.blockdoom.BlockDoomPlugin
+api-version: '1.20'
+prefix: BlockDoom
+authors: [ Antigravity ]
+description: Multiplayer Survival Chaos Plugin.
+commands:
+  blockdoom:
+    description: Main command for BlockDoom.
+    aliases: [ bd ]
+    permission: blockdoom.admin
+    permission-message: "<red>You do not have permission to use this command."
+permissions:
+  blockdoom.admin:
+    description: Allows management of BlockDoom game state and configurations.
+    default: op
