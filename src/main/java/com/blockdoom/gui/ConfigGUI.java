@@ -41,6 +41,16 @@ public final class ConfigGUI {
         );
         inv.setItem(10, createItem(Material.CLOCK, "<gold><bold>Timer Duration</bold></gold>", timerLore));
 
+        // Slot 11: Auto Reload Config
+        boolean autoReload = configManager.isAutoReloadOnConfigChange();
+        String autoStr = autoReload ? "<green><bold>TRUE</bold></green>" : "<red><bold>FALSE</bold></red>";
+        List<String> autoLore = List.of(
+                "<gray>Current: " + autoStr + "</gray>",
+                "",
+                "<yellow>Click to toggle auto-reload on config changes</yellow>"
+        );
+        inv.setItem(11, createItem(Material.REPEATER, "<yellow><bold>Auto Reload Config</bold></yellow>", autoLore));
+
         // Slot 12: Scan Radius
         List<String> radiusLore = List.of(
                 "<gray>Current: <aqua><bold>" + configManager.getScanRadius() + " chunks</bold></aqua></gray>",
@@ -60,6 +70,16 @@ public final class ConfigGUI {
         );
         Material showMat = showNext ? Material.REDSTONE_TORCH : Material.LEVER;
         inv.setItem(14, createItem(showMat, "<yellow><bold>Show Next Block Early</bold></yellow>", showLore));
+
+        // Slot 15: Protect Player Builds
+        boolean protect = configManager.isProtectPlayerBuilds();
+        String protectStr = protect ? "<green><bold>TRUE</bold></green>" : "<red><bold>FALSE</bold></red>";
+        List<String> protectLore = List.of(
+                "<gray>Current: " + protectStr + "</gray>",
+                "",
+                "<yellow>Click to toggle protection of player placed blocks</yellow>"
+        );
+        inv.setItem(15, createItem(Material.SHIELD, "<yellow><bold>Protect Player Builds</bold></yellow>", protectLore));
 
         // Slot 16: Chunks Per Tick
         List<String> chunksLore = List.of(

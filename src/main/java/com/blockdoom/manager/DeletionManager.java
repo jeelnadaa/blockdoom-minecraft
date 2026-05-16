@@ -154,7 +154,7 @@ public class DeletionManager {
                     int worldZ = (pos.z() << 4) + z;
 
                     for (int y = minY; y < maxY && blocksDeleted < maxBlocks; y++) {
-                        if (storageManager.isProtected(worldId, worldX, y, worldZ)) {
+                        if (configManager.isProtectPlayerBuilds() && storageManager.isProtected(worldId, worldX, y, worldZ)) {
                             continue;
                         }
 

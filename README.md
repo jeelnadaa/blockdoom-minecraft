@@ -24,6 +24,8 @@ game:
   reveal-delay: 5         # Warning delay in seconds between revealing the block and starting deletion.
   scan-radius: 3          # Radius in chunks around active players to sample blocks (default = 3).
   show-next-block-during-timer: false # If true, reveals the next block in actionbar during the timer.
+  protect-player-builds: true # If true, manually placed blocks are protected from deletion.
+  auto-reload-on-config-change: true # If true, updates via command or GUI take effect instantly.
   enabled-dimensions:     # Dedicated gameplay world names used by the plugin.
     overworld: "blockdoom_overworld"
     nether: "blockdoom_nether"
@@ -42,6 +44,8 @@ performance:
 | `game` | `reveal-delay` | `5` | The warning window (in seconds) during which players see the title announcement before deletion starts. |
 | `game` | `scan-radius` | `3` | The chunk radius around each active player from which candidate blocks are sampled. |
 | `game` | `show-next-block-during-timer` | `false` | When enabled (`true`), pre-selects the block at the *start* of the countdown and displays it in the ActionBar (e.g. "Next deletion: Stone in 00:43"). |
+| `game` | `protect-player-builds` | `true` | When enabled (`true`), protects manually built structures. When disabled (`false`), player builds vanish along with natural blocks. |
+| `game` | `auto-reload-on-config-change` | `true` | Instantly applies setting changes across all game timers and subsystems without needing `/blockdoom reload`. |
 | `performance` | `chunks-per-tick` | `10` | How many chunks in the deletion queue are scrubbed per server tick. |
 | `performance` | `max-blocks-per-chunk-tick`| `500` | Limits how many blocks vanish in a single chunk per tick. Prevents lighting and block update lag spikes. |
 | `blacklist` | List of Materials | Bedrock, Portals, Air, Fluids, etc. | Blocks listed here will **never** be selected for deletion. |
@@ -66,7 +70,7 @@ All commands require the permission `blockdoom.admin` (default: server operators
 | `/blockdoom reload` | `/blockdoom reload` | Live reloads `config.yml`, `deleted_materials.yml`, and placement data instantly. |
 | `/blockdoom forcestart` | `/blockdoom forcestart` | Forcefully starts the game loop. |
 | `/blockdoom forcedelete`| `/blockdoom forcedelete <material>` | Instantly forces the deletion of a specific block material in the active dimension. |
-| `/blockdoom config` | `/blockdoom config <timer\|radius\|shownext\|speed> <val>` | On-the-fly CLI configuration update for timer duration, scan radius, early reveal (`true`/`false`), or deletion speed. |
+| `/blockdoom config` | `/blockdoom config <timer\|radius\|shownext\|speed\|protect\|autoreload> <val>` | On-the-fly CLI config update for timer duration, scan radius, early reveal, speed, build protection, or auto-reload. |
 | `/blockdoom blacklist`| `/blockdoom blacklist <add\|remove> <material>` | CLI command to instantly add or remove a block from the exclusion blacklist. |
 
 ---

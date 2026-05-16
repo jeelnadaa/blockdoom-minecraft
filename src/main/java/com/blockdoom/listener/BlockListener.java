@@ -1,5 +1,6 @@
 package com.blockdoom.listener;
 
+import com.blockdoom.manager.ConfigManager;
 import com.blockdoom.manager.PlacementTrackingManager;
 import com.blockdoom.manager.StorageManager;
 import com.blockdoom.manager.WorldRegenerationManager;
@@ -13,11 +14,13 @@ import org.bukkit.event.block.BlockPlaceEvent;
  * Listens to block placement and break events to maintain protection of player-placed blocks.
  */
 public class BlockListener implements Listener {
+    private final ConfigManager configManager;
     private final PlacementTrackingManager placementTrackingManager;
     private final StorageManager storageManager;
     private final WorldRegenerationManager worldRegenerationManager;
 
-    public BlockListener(PlacementTrackingManager placementTrackingManager, StorageManager storageManager, WorldRegenerationManager worldRegenerationManager) {
+    public BlockListener(ConfigManager configManager, PlacementTrackingManager placementTrackingManager, StorageManager storageManager, WorldRegenerationManager worldRegenerationManager) {
+        this.configManager = configManager;
         this.placementTrackingManager = placementTrackingManager;
         this.storageManager = storageManager;
         this.worldRegenerationManager = worldRegenerationManager;
@@ -27,6 +30,9 @@ public class BlockListener implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
         if (worldRegenerationManager.isRegenerating()) {
             event.setCancelled(true);
+            return;
+        }
+        if (!configManager.isProtectPlayerBuilds()) {
             return;
         }
         // Only protect if the material is currently in the deleted registry
@@ -39,6 +45,9 @@ public class BlockListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         if (worldRegenerationManager.isRegenerating()) {
             event.setCancelled(true);
+            return;
+        }
+        if (!configManager.isProtectPlayerBuilds()) {
             return;
         }
         if (storageManager.isMaterialDeletedGlobally(event.getBlock().getType())) {

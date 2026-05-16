@@ -12,11 +12,14 @@ import java.util.*;
  */
 public class ConfigManager {
     private final BlockDoomPlugin plugin;
+    private Runnable reloadCallback;
 
     private int timerDuration;
     private int revealDelay;
     private int scanRadius;
     private boolean showNextBlockDuringTimer;
+    private boolean protectPlayerBuilds;
+    private boolean autoReloadOnConfigChange;
     private int chunksPerTick;
     private int maxBlocksPerChunkTick;
 
@@ -49,6 +52,10 @@ public class ConfigManager {
         loadConfig();
     }
 
+    public void setReloadCallback(Runnable reloadCallback) {
+        this.reloadCallback = reloadCallback;
+    }
+
     public void loadConfig() {
         plugin.reloadConfig();
         FileConfiguration config = plugin.getConfig();
@@ -57,6 +64,8 @@ public class ConfigManager {
         this.revealDelay = config.getInt("game.reveal-delay", 5);
         this.scanRadius = config.getInt("game.scan-radius", 3);
         this.showNextBlockDuringTimer = config.getBoolean("game.show-next-block-during-timer", false);
+        this.protectPlayerBuilds = config.getBoolean("game.protect-player-builds", true);
+        this.autoReloadOnConfigChange = config.getBoolean("game.auto-reload-on-config-change", true);
 
         this.chunksPerTick = config.getInt("performance.chunks-per-tick", 10);
         this.maxBlocksPerChunkTick = config.getInt("performance.max-blocks-per-chunk-tick", 500);
@@ -106,28 +115,53 @@ public class ConfigManager {
         this.soundDefeat = config.getString("sounds.defeat", "ENTITY_WITHER_DEATH");
     }
 
+    private void triggerAutoReload() {
+        if (autoReloadOnConfigChange && reloadCallback != null) {
+            reloadCallback.run();
+            MessageUtil.broadcast("<green>BlockDoom configuration updated and auto-reloaded successfully!</green>");
+        }
+    }
+
     public void setTimerDuration(int seconds) {
         this.timerDuration = Math.max(5, seconds);
         plugin.getConfig().set("game.timer-duration", this.timerDuration);
         plugin.saveConfig();
+        triggerAutoReload();
     }
 
     public void setScanRadius(int radius) {
         this.scanRadius = Math.max(1, Math.min(8, radius));
         plugin.getConfig().set("game.scan-radius", this.scanRadius);
         plugin.saveConfig();
+        triggerAutoReload();
     }
 
     public void setShowNextBlockDuringTimer(boolean show) {
         this.showNextBlockDuringTimer = show;
         plugin.getConfig().set("game.show-next-block-during-timer", show);
         plugin.saveConfig();
+        triggerAutoReload();
+    }
+
+    public void setProtectPlayerBuilds(boolean protect) {
+        this.protectPlayerBuilds = protect;
+        plugin.getConfig().set("game.protect-player-builds", protect);
+        plugin.saveConfig();
+        triggerAutoReload();
+    }
+
+    public void setAutoReloadOnConfigChange(boolean autoReload) {
+        this.autoReloadOnConfigChange = autoReload;
+        plugin.getConfig().set("game.auto-reload-on-config-change", autoReload);
+        plugin.saveConfig();
+        triggerAutoReload();
     }
 
     public void setChunksPerTick(int chunks) {
         this.chunksPerTick = Math.max(1, Math.min(100, chunks));
         plugin.getConfig().set("performance.chunks-per-tick", this.chunksPerTick);
         plugin.saveConfig();
+        triggerAutoReload();
     }
 
     public void addBlacklistMaterial(Material mat) {
@@ -138,6 +172,7 @@ public class ConfigManager {
             list.add(mat.name());
             plugin.getConfig().set("blacklist", list);
             plugin.saveConfig();
+            triggerAutoReload();
         }
     }
 
@@ -148,12 +183,15 @@ public class ConfigManager {
         list.remove(mat.name());
         plugin.getConfig().set("blacklist", list);
         plugin.saveConfig();
+        triggerAutoReload();
     }
 
     public int getTimerDuration() { return timerDuration; }
     public int getRevealDelay() { return revealDelay; }
     public int getScanRadius() { return scanRadius; }
     public boolean isShowNextBlockDuringTimer() { return showNextBlockDuringTimer; }
+    public boolean isProtectPlayerBuilds() { return protectPlayerBuilds; }
+    public boolean isAutoReloadOnConfigChange() { return autoReloadOnConfigChange; }
     public int getChunksPerTick() { return chunksPerTick; }
     public int getMaxBlocksPerChunkTick() { return maxBlocksPerChunkTick; }
     public Map<String, String> getEnabledDimensions() { return enabledDimensions; }

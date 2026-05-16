@@ -11,6 +11,10 @@ game:
   scan-radius: 3
   # If true, the next block to be deleted is selected and shown in the actionbar during the timer
   show-next-block-during-timer: false
+  # If true, blocks manually placed by players will never be deleted
+  protect-player-builds: true
+  # If true, whenever settings are updated via command or GUI, config changes take effect instantly
+  auto-reload-on-config-change: true
   # Enabled gameplay dimension names
   enabled-dimensions:
     overworld: "blockdoom_overworld"
@@ -19,7 +23,6 @@ game:
 
 performance:
   # Number of chunks processed for deletion per server tick (20 ticks per second)
-  # Keeping this balanced prevents server lag (TPS drops)
   chunks-per-tick: 10
   # Maximum blocks deleted inside a single chunk per tick (to avoid massive light/physics updates lagging)
   max-blocks-per-chunk-tick: 500

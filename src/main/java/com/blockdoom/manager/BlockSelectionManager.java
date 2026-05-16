@@ -70,7 +70,7 @@ public class BlockSelectionManager {
                         int worldZ = (sZ << 4) + z;
                         // Sample blocks with step 3 in Y for performance optimization
                         for (int y = minY; y < maxY; y += 3) {
-                            if (storageManager.isProtected(worldId, worldX, y, worldZ)) {
+                            if (configManager.isProtectPlayerBuilds() && storageManager.isProtected(worldId, worldX, y, worldZ)) {
                                 continue;
                             }
                             Material mat = snapshot.getBlockType(x, y, z);
