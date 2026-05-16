@@ -81,9 +81,41 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                     MessageUtil.sendMessage(sender, "<red>Unknown block material: " + args[1] + "</red>");
                 }
             }
+            case "ui" -> {
+                if (sender instanceof org.bukkit.entity.Player player) {
+                    com.blockdoom.gui.ConfigGUI.openMainConfig(player, configManager);
+                } else {
+                    MessageUtil.sendMessage(sender, "<red>Only in-game players can open the UI.</red>");
+                }
+            }
+            case "blacklist" -> {
+                if (args.length < 3) {
+                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom blacklist <add|remove> <material></red>");
+                    return true;
+                }
+                String action = args[1].toLowerCase();
+                try {
+                    Material mat = Material.valueOf(args[2].toUpperCase());
+                    if (!mat.isBlock()) {
+                        MessageUtil.sendMessage(sender, "<red>Material " + mat.name() + " is not a block.</red>");
+                        return true;
+                    }
+                    if (action.equals("add")) {
+                        configManager.addBlacklistMaterial(mat);
+                        MessageUtil.sendMessage(sender, "<green>Added " + mat.name() + " to blacklist.</green>");
+                    } else if (action.equals("remove")) {
+                        configManager.removeBlacklistMaterial(mat);
+                        MessageUtil.sendMessage(sender, "<green>Removed " + mat.name() + " from blacklist.</green>");
+                    } else {
+                        MessageUtil.sendMessage(sender, "<red>Unknown action: " + action + "</red>");
+                    }
+                } catch (IllegalArgumentException e) {
+                    MessageUtil.sendMessage(sender, "<red>Unknown material: " + args[2] + "</red>");
+                }
+            }
             case "config" -> {
                 if (args.length < 3) {
-                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom config <timer|radius|shownext> <value></red>");
+                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom config <timer|radius|shownext|speed> <value></red>");
                     return true;
                 }
                 String setting = args[1].toLowerCase();
@@ -101,6 +133,9 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                     } else if (setting.equals("radius")) {
                         configManager.setScanRadius(val);
                         MessageUtil.sendMessage(sender, "<green>Scan radius updated to " + val + " chunks.</green>");
+                    } else if (setting.equals("speed")) {
+                        configManager.setChunksPerTick(val);
+                        MessageUtil.sendMessage(sender, "<green>Deletion speed updated to " + val + " chunks/tick.</green>");
                     } else {
                         MessageUtil.sendMessage(sender, "<red>Unknown config setting: " + setting + "</red>");
                     }
@@ -116,6 +151,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
     private void sendHelp(CommandSender sender) {
         MessageUtil.sendMessage(sender, "<gold><bold>--- BlockDoom Commands ---</bold></gold>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom ui</yellow> <gray>- Opens the in-game configuration GUI menu</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom start</yellow> <gray>- Starts the game loop</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom pause</yellow> <gray>- Pauses the game loop</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom skip</yellow> <gray>- Skips current countdown to reveal</gray>");
@@ -124,7 +160,8 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom reload</yellow> <gray>- Reloads config.yml and storage</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcestart</yellow> <gray>- Forcefully starts the game</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcedelete <block></yellow> <gray>- Forces immediate deletion of a block</gray>");
-        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom config <timer|radius|shownext> <val></yellow> <gray>- Updates config on the fly</gray>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom config <timer|radius|shownext|speed> <val></yellow> <gray>- Updates config on the fly</gray>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom blacklist <add|remove> <block></yellow> <gray>- Manages the block blacklist</gray>");
     }
 
     private void sendStatus(CommandSender sender) {
@@ -145,12 +182,12 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
         List<String> completions = new ArrayList<>();
         if (args.length == 1) {
-            List<String> subs = Arrays.asList("start", "pause", "skip", "regenerate", "status", "reload", "config", "forcestart", "forcedelete");
+            List<String> subs = Arrays.asList("ui", "start", "pause", "skip", "regenerate", "status", "reload", "config", "blacklist", "forcestart", "forcedelete");
             for (String s : subs) {
                 if (s.startsWith(args[0].toLowerCase())) completions.add(s);
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("config")) {
-            List<String> subs = Arrays.asList("timer", "radius", "shownext");
+            List<String> subs = Arrays.asList("timer", "radius", "shownext", "speed");
             for (String s : subs) {
                 if (s.startsWith(args[1].toLowerCase())) completions.add(s);
             }
@@ -158,6 +195,17 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             List<String> subs = Arrays.asList("true", "false");
             for (String s : subs) {
                 if (s.startsWith(args[2].toLowerCase())) completions.add(s);
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("blacklist")) {
+            List<String> subs = Arrays.asList("add", "remove");
+            for (String s : subs) {
+                if (s.startsWith(args[1].toLowerCase())) completions.add(s);
+            }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("blacklist")) {
+            for (Material mat : Material.values()) {
+                if (mat.isBlock() && mat.name().toLowerCase().startsWith(args[2].toLowerCase())) {
+                    completions.add(mat.name());
+                }
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("forcedelete")) {
             for (Material mat : Material.values()) {

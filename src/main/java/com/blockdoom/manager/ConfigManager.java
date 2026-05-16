@@ -5,11 +5,7 @@ import com.blockdoom.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Manages configuration loading, live reloading, and on-the-fly value updates.
@@ -111,20 +107,46 @@ public class ConfigManager {
     }
 
     public void setTimerDuration(int seconds) {
-        this.timerDuration = seconds;
-        plugin.getConfig().set("game.timer-duration", seconds);
+        this.timerDuration = Math.max(5, seconds);
+        plugin.getConfig().set("game.timer-duration", this.timerDuration);
         plugin.saveConfig();
     }
 
     public void setScanRadius(int radius) {
-        this.scanRadius = radius;
-        plugin.getConfig().set("game.scan-radius", radius);
+        this.scanRadius = Math.max(1, Math.min(8, radius));
+        plugin.getConfig().set("game.scan-radius", this.scanRadius);
         plugin.saveConfig();
     }
 
     public void setShowNextBlockDuringTimer(boolean show) {
         this.showNextBlockDuringTimer = show;
         plugin.getConfig().set("game.show-next-block-during-timer", show);
+        plugin.saveConfig();
+    }
+
+    public void setChunksPerTick(int chunks) {
+        this.chunksPerTick = Math.max(1, Math.min(100, chunks));
+        plugin.getConfig().set("performance.chunks-per-tick", this.chunksPerTick);
+        plugin.saveConfig();
+    }
+
+    public void addBlacklistMaterial(Material mat) {
+        if (mat == null || blacklist.contains(mat)) return;
+        blacklist.add(mat);
+        List<String> list = plugin.getConfig().getStringList("blacklist");
+        if (!list.contains(mat.name())) {
+            list.add(mat.name());
+            plugin.getConfig().set("blacklist", list);
+            plugin.saveConfig();
+        }
+    }
+
+    public void removeBlacklistMaterial(Material mat) {
+        if (mat == null || !blacklist.contains(mat)) return;
+        blacklist.remove(mat);
+        List<String> list = plugin.getConfig().getStringList("blacklist");
+        list.remove(mat.name());
+        plugin.getConfig().set("blacklist", list);
         plugin.saveConfig();
     }
 

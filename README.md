@@ -57,6 +57,7 @@ All commands require the permission `blockdoom.admin` (default: server operators
 | Command | Subcommand / Usage | Description |
 | :--- | :--- | :--- |
 | `/blockdoom` | `/blockdoom` | Shows the command help menu. |
+| `/blockdoom ui` | `/blockdoom ui` | 🖥️ **Interactive Menu**: Opens an in-game GUI chest inventory to view/edit config values and manage the block blacklist. |
 | `/blockdoom start` | `/blockdoom start` | Starts or resumes the global countdown and gameplay loop. |
 | `/blockdoom pause` | `/blockdoom pause` | Pauses the active countdown or deletion cycle instantly. |
 | `/blockdoom skip` | `/blockdoom skip` | Skips the current countdown timer directly to the block reveal phase. |
@@ -65,7 +66,8 @@ All commands require the permission `blockdoom.admin` (default: server operators
 | `/blockdoom reload` | `/blockdoom reload` | Live reloads `config.yml`, `deleted_materials.yml`, and placement data instantly. |
 | `/blockdoom forcestart` | `/blockdoom forcestart` | Forcefully starts the game loop. |
 | `/blockdoom forcedelete`| `/blockdoom forcedelete <material>` | Instantly forces the deletion of a specific block material in the active dimension. |
-| `/blockdoom config` | `/blockdoom config <timer\|radius\|shownext> <val>` | On-the-fly CLI configuration update for timer duration, scan radius, or showing next block (`true`/`false`). |
+| `/blockdoom config` | `/blockdoom config <timer\|radius\|shownext\|speed> <val>` | On-the-fly CLI configuration update for timer duration, scan radius, early reveal (`true`/`false`), or deletion speed. |
+| `/blockdoom blacklist`| `/blockdoom blacklist <add\|remove> <material>` | CLI command to instantly add or remove a block from the exclusion blacklist. |
 
 ---
 
