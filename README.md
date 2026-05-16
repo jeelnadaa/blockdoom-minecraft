@@ -4,19 +4,21 @@
 
 ---
 
-## 🎮 Core Gameplay Mechanics
+## 🎮 Core Gameplay Mechanics & Advanced Features
 
+- **Interactive In-Game GUI (`/blockdoom ui`)**: A fully immersive chest inventory menu allowing server admins to view, adjust, and toggle all settings (timer, radius, speed, build protection, early reveal, auto-reload) with left/right/shift clicks and real-time chat/sound feedback. Includes a multi-page interactive **Blacklist Manager**.
 - **Probabilistic Dimension Selection**: Only dimensions containing active players are selected, weighted by player count (e.g. 3 players in Overworld and 1 in Nether = 75% Overworld, 25% Nether).
+- **Dimension Isolation**: Deletion cycles and registries are strictly isolated per dimension. Deleting Overworld Stone leaves Nether Stone perfectly safe.
 - **Loaded Chunk Snapshot Scanning**: To ensure peak server performance, BlockDoom never scans the entire world. It asynchronously inspects chunk snapshots within a configurable radius around players.
-- **Player Placement Protection**: Any block manually placed by a player is tracked in highly efficient, persistent chunk-based storage. Player-placed blocks are **permanently safe** from deletion.
-- **No-Repeat Guarantee**: Once a material is erased, it is logged into `deleted_materials.yml` and can never be selected again.
-- **TPS-Preserving Deletion Queue**: Block deletions happen in batched chunks per server tick with maximum block update caps, ensuring smooth server performance during massive ore/rock purges.
+- **Player Placement Protection Toggle**: When enabled (`protect-player-builds`), any block manually placed by a player whose material is registered as deleted is tracked in highly efficient, persistent chunk-based storage. These blocks are **permanently safe** from deletion.
+- **No-Repeat Guarantee**: Once a material is erased in a world, it is logged into `deleted_materials.yml` and can never be selected again.
+- **TPS-Preserving Deletion Queue & PDC Caching**: Block deletions happen in batched chunks per server tick with maximum block update caps. Chunks are permanently tagged in their NBT `PersistentDataContainer` (`scrub_cycle`), allowing the plugin to instantly bypass clean chunks on unloads/reloads for zero CPU overhead.
 
 ---
 
 ## ⚙️ Configuration Guide (`config.yml`)
 
-The `config.yml` file allows full customization of gameplay timers, performance limits, blacklists, UI messages, and sound cues. Changes can be applied instantly without restarting the server by running `/blockdoom reload`.
+The `config.yml` file allows full customization of gameplay timers, performance limits, blacklists, UI messages, and sound cues. When `auto-reload-on-config-change` is enabled, changes applied via `/blockdoom config` or `/blockdoom ui` take effect instantly across all game timers and subsystems.
 
 ```yaml
 game:
@@ -86,15 +88,19 @@ BlockDoom stores runtime data inside `plugins/BlockDoom/`:
 
 ## 🚀 Building & Installation
 
+> [!IMPORTANT]
+> **Please build the project first using the instructions below, and then copy the generated JAR file from `build/libs/` into your server's `plugins/` directory.**
+
 ### Prerequisites
 - **Java 21** or higher installed and added to your system `PATH`.
 - A Minecraft **Paper 1.20.4** server environment.
 
-### Building the Plugin
-You can compile the project using the included Gradle wrapper without needing to install Gradle globally:
+### 1. Building the Plugin
+You can compile the project instantly using the included Gradle wrapper without needing to install Gradle globally:
 
 #### On Windows (PowerShell / Command Prompt):
 ```cmd
+cd d:\blockdoom
 .\gradlew.bat build
 ```
 
@@ -103,14 +109,14 @@ You can compile the project using the included Gradle wrapper without needing to
 ./gradlew build
 ```
 
-### Locating the Generated JAR File
-Upon a successful build, the compiled plugin artifact is automatically generated in the `build/libs` directory:
+### 2. Locating Your Compiled JAR File
+Upon a successful build, your ready-to-run plugin JAR is located exactly here:
 ```
-d:/blockdoom/build/libs/BlockDoom-1.0.0.jar
+d:\blockdoom\build\libs\BlockDoom-1.0.0.jar
 ```
 
-### Installation Steps
-1. Copy `BlockDoom-1.0.0.jar` from `build/libs/` into your Paper server's `plugins/` directory.
+### 3. Installation Steps
+1. Copy `BlockDoom-1.0.0.jar` from `build/libs/` into your Paper server's `plugins/` folder.
 2. Start or restart your server.
 3. The plugin will automatically generate its configuration files and custom gameplay worlds upon startup.
-4. When ready, join the server and execute `/blockdoom start` to initiate the chaos!
+4. When ready, join the server and execute `/blockdoom start` (or `/blockdoom ui` to configure) to initiate the chaos!
