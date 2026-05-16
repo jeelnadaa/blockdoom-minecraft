@@ -49,6 +49,20 @@ public class GameManager {
     public Material getSelectedMaterial() { return selectedMaterial; }
     public WinLossManager getWinLossManager() { return winLossManager; }
 
+    public void prepareNextCycleBlockIfConfigured() {
+        if (configManager.isShowNextBlockDuringTimer()) {
+            World dim = dimensionManager.selectDimension();
+            if (dim != null) {
+                blockSelectionManager.selectBlockAsync(dim, mat -> {
+                    selectedMaterial = mat;
+                    activeDimension = dim;
+                });
+            }
+        } else {
+            selectedMaterial = null;
+        }
+    }
+
     public void start() {
         if (state == GameState.RUNNING) {
             return;
@@ -61,6 +75,7 @@ public class GameManager {
             timerManager.resetTimer();
         }
         state = GameState.RUNNING;
+        prepareNextCycleBlockIfConfigured();
         timerManager.start();
         MessageUtil.broadcast("<green><bold>GAME STARTED:</bold></green> The countdown has begun. Brace yourselves for deletion!");
     }
@@ -100,12 +115,14 @@ public class GameManager {
         deletionManager.startDeletion(dimension, material, () -> {
             state = GameState.RUNNING;
             timerManager.resetTimer();
+            prepareNextCycleBlockIfConfigured();
             MessageUtil.broadcast("<green><bold>CYCLE COMPLETE:</bold></green> All natural " + material.name() + " deleted! Starting next countdown.");
         });
     }
 
     public void regenerate() {
         state = GameState.WAITING;
+        selectedMaterial = null;
         timerManager.stop();
         deletionManager.stop();
         worldRegenerationManager.regenerateWorlds(() -> {
@@ -116,6 +133,12 @@ public class GameManager {
 
     public void startRevealPhase() {
         if (state != GameState.RUNNING) return;
+
+        if (configManager.isShowNextBlockDuringTimer() && selectedMaterial != null && activeDimension != null) {
+            state = GameState.REVEALING;
+            uiManager.broadcastReveal(selectedMaterial);
+            return;
+        }
 
         activeDimension = dimensionManager.selectDimension();
         if (activeDimension == null) {
@@ -143,6 +166,7 @@ public class GameManager {
             if (state == GameState.DELETING) {
                 state = GameState.RUNNING;
                 timerManager.resetTimer();
+                prepareNextCycleBlockIfConfigured();
                 MessageUtil.broadcast("<green><bold>CYCLE COMPLETE:</bold></green> All natural " + selectedMaterial.name() + " deleted! Starting next countdown.");
             }
         });

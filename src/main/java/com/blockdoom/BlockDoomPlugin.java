@@ -56,7 +56,7 @@ public class BlockDoomPlugin extends JavaPlugin {
         }
 
         // Register Listeners
-        Bukkit.getPluginManager().registerEvents(new BlockListener(placementTrackingManager, worldRegenerationManager), this);
+        Bukkit.getPluginManager().registerEvents(new BlockListener(placementTrackingManager, storageManager, worldRegenerationManager), this);
         Bukkit.getPluginManager().registerEvents(new PlayerListener(gameManager, configManager, worldRegenerationManager), this);
         Bukkit.getPluginManager().registerEvents(new WorldListener(deletionManager), this);
 

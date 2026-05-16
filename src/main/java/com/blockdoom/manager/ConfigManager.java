@@ -20,6 +20,7 @@ public class ConfigManager {
     private int timerDuration;
     private int revealDelay;
     private int scanRadius;
+    private boolean showNextBlockDuringTimer;
     private int chunksPerTick;
     private int maxBlocksPerChunkTick;
 
@@ -28,6 +29,7 @@ public class ConfigManager {
 
     private String prefix;
     private String actionbarTimer;
+    private String actionbarTimerWithBlock;
     private String actionbarRevealing;
     private String actionbarPaused;
     private String titleReveal;
@@ -58,6 +60,7 @@ public class ConfigManager {
         this.timerDuration = config.getInt("game.timer-duration", 60);
         this.revealDelay = config.getInt("game.reveal-delay", 5);
         this.scanRadius = config.getInt("game.scan-radius", 3);
+        this.showNextBlockDuringTimer = config.getBoolean("game.show-next-block-during-timer", false);
 
         this.chunksPerTick = config.getInt("performance.chunks-per-tick", 10);
         this.maxBlocksPerChunkTick = config.getInt("performance.max-blocks-per-chunk-tick", 500);
@@ -88,6 +91,7 @@ public class ConfigManager {
         MessageUtil.setPrefix(this.prefix);
 
         this.actionbarTimer = config.getString("messages.actionbar-timer", "<yellow>Next deletion in: <gold><bold>%time%</bold></gold></yellow>");
+        this.actionbarTimerWithBlock = config.getString("messages.actionbar-timer-with-block", "<yellow>Next deletion: <red><bold>%block%</bold></red> in <gold><bold>%time%</bold></gold></yellow>");
         this.actionbarRevealing = config.getString("messages.actionbar-revealing", "<red><bold>%block%</bold> will be deleted in <gold>%time%s</gold>!</red>");
         this.actionbarPaused = config.getString("messages.actionbar-paused", "<gray><italic>Deletion Cycle Paused</italic></gray>");
         this.titleReveal = config.getString("messages.title-reveal", "<red><bold>%block%</bold></red>");
@@ -118,15 +122,23 @@ public class ConfigManager {
         plugin.saveConfig();
     }
 
+    public void setShowNextBlockDuringTimer(boolean show) {
+        this.showNextBlockDuringTimer = show;
+        plugin.getConfig().set("game.show-next-block-during-timer", show);
+        plugin.saveConfig();
+    }
+
     public int getTimerDuration() { return timerDuration; }
     public int getRevealDelay() { return revealDelay; }
     public int getScanRadius() { return scanRadius; }
+    public boolean isShowNextBlockDuringTimer() { return showNextBlockDuringTimer; }
     public int getChunksPerTick() { return chunksPerTick; }
     public int getMaxBlocksPerChunkTick() { return maxBlocksPerChunkTick; }
     public Map<String, String> getEnabledDimensions() { return enabledDimensions; }
     public Set<Material> getBlacklist() { return blacklist; }
 
     public String getActionbarTimer() { return actionbarTimer; }
+    public String getActionbarTimerWithBlock() { return actionbarTimerWithBlock; }
     public String getActionbarRevealing() { return actionbarRevealing; }
     public String getActionbarPaused() { return actionbarPaused; }
     public String getTitleReveal() { return titleReveal; }

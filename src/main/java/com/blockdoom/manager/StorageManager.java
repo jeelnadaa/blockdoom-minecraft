@@ -11,14 +11,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Handles persistence of deleted materials and player-placed protected blocks.
+ * Handles persistence of deleted materials (per dimension and globally) and player-placed protected blocks.
  */
 public class StorageManager {
     private final BlockDoomPlugin plugin;
     private final File deletedMaterialsFile;
     private final File placementsFile;
 
-    private final Set<Material> deletedMaterials = ConcurrentHashMap.newKeySet();
+    private final Set<Material> allDeletedMaterials = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, Set<Material>> deletedMaterialsPerWorld = new ConcurrentHashMap<>();
     // worldUUID -> (chunkKey -> set of packed block coords)
     private final Map<UUID, Map<Long, Set<Integer>>> protectedBlocks = new ConcurrentHashMap<>();
 
@@ -30,15 +31,36 @@ public class StorageManager {
     }
 
     public void loadAll() {
-        deletedMaterials.clear();
+        allDeletedMaterials.clear();
+        deletedMaterialsPerWorld.clear();
         if (deletedMaterialsFile.exists()) {
             FileConfiguration config = YamlConfiguration.loadConfiguration(deletedMaterialsFile);
-            List<String> list = config.getStringList("deleted");
-            for (String matName : list) {
-                try {
-                    deletedMaterials.add(Material.valueOf(matName));
-                } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Unknown material in deleted_materials.yml: " + matName);
+            if (config.contains("global")) {
+                List<String> list = config.getStringList("global");
+                for (String matName : list) {
+                    try {
+                        allDeletedMaterials.add(Material.valueOf(matName));
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Unknown material in global deleted list: " + matName);
+                    }
+                }
+            }
+            if (config.contains("worlds")) {
+                for (String worldKeyStr : config.getConfigurationSection("worlds").getKeys(false)) {
+                    try {
+                        UUID worldId = UUID.fromString(worldKeyStr);
+                        Set<Material> matSet = ConcurrentHashMap.newKeySet();
+                        for (String matName : config.getStringList("worlds." + worldKeyStr)) {
+                            try {
+                                matSet.add(Material.valueOf(matName));
+                            } catch (IllegalArgumentException e) {
+                                // Invalid material
+                            }
+                        }
+                        deletedMaterialsPerWorld.put(worldId, matSet);
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Invalid world UUID in deleted_materials.yml: " + worldKeyStr);
+                    }
                 }
             }
         }
@@ -67,11 +89,17 @@ public class StorageManager {
 
     public void saveAll() {
         FileConfiguration matConfig = new YamlConfiguration();
-        List<String> matList = new ArrayList<>();
-        for (Material mat : deletedMaterials) {
-            matList.add(mat.name());
+        List<String> globalList = new ArrayList<>();
+        for (Material mat : allDeletedMaterials) {
+            globalList.add(mat.name());
         }
-        matConfig.set("deleted", matList);
+        matConfig.set("global", globalList);
+
+        for (Map.Entry<UUID, Set<Material>> entry : deletedMaterialsPerWorld.entrySet()) {
+            List<String> wList = new ArrayList<>();
+            for (Material m : entry.getValue()) wList.add(m.name());
+            matConfig.set("worlds." + entry.getKey().toString(), wList);
+        }
         try {
             matConfig.save(deletedMaterialsFile);
         } catch (IOException e) {
@@ -93,24 +121,35 @@ public class StorageManager {
     }
 
     public void resetAll() {
-        deletedMaterials.clear();
+        allDeletedMaterials.clear();
+        deletedMaterialsPerWorld.clear();
         protectedBlocks.clear();
         if (deletedMaterialsFile.exists()) deletedMaterialsFile.delete();
         if (placementsFile.exists()) placementsFile.delete();
         saveAll();
     }
 
-    public void addDeletedMaterial(Material material) {
-        deletedMaterials.add(material);
+    public void addDeletedMaterial(UUID worldId, Material material) {
+        allDeletedMaterials.add(material);
+        deletedMaterialsPerWorld.computeIfAbsent(worldId, k -> ConcurrentHashMap.newKeySet()).add(material);
         saveAll();
     }
 
-    public boolean isMaterialDeleted(Material material) {
-        return deletedMaterials.contains(material);
+    public boolean isMaterialDeletedGlobally(Material material) {
+        return allDeletedMaterials.contains(material);
+    }
+
+    public boolean isMaterialDeletedInWorld(UUID worldId, Material material) {
+        Set<Material> set = deletedMaterialsPerWorld.get(worldId);
+        return set != null && set.contains(material);
     }
 
     public Set<Material> getDeletedMaterials() {
-        return deletedMaterials;
+        return allDeletedMaterials;
+    }
+
+    public Set<Material> getDeletedMaterialsForWorld(UUID worldId) {
+        return deletedMaterialsPerWorld.getOrDefault(worldId, Collections.emptySet());
     }
 
     public boolean isProtected(UUID worldId, int x, int y, int z) {

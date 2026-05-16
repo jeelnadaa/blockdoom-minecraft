@@ -9,6 +9,8 @@ game:
   reveal-delay: 5
   # Scan radius around active players in chunks (default = 3, max recommended = 4)
   scan-radius: 3
+  # If true, the next block to be deleted is selected and shown in the actionbar during the timer
+  show-next-block-during-timer: false
   # Enabled gameplay dimension names
   enabled-dimensions:
     overworld: "blockdoom_overworld"
@@ -49,6 +51,7 @@ blacklist:
 messages:
   prefix: "<dark_gray>[<red><bold>BlockDoom</bold></red>]</dark_gray> "
   actionbar-timer: "<yellow>Next deletion in: <gold><bold>%time%</bold></gold></yellow>"
+  actionbar-timer-with-block: "<yellow>Next deletion: <red><bold>%block%</bold></red> in <gold><bold>%time%</bold></gold></yellow>"
   actionbar-revealing: "<red><bold>%block%</bold> will be deleted in <gold>%time%s</gold>!</red>"
   actionbar-paused: "<gray><italic>Deletion Cycle Paused</italic></gray>"
   title-reveal: "<red><bold>%block%</bold></red>"

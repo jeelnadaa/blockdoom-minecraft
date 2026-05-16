@@ -62,7 +62,7 @@ public class TimerManager {
 
         if (state == GameState.RUNNING) {
             if (remainingSeconds > 0) {
-                uiManager.broadcastTimerTick(remainingSeconds);
+                uiManager.broadcastTimerTick(remainingSeconds, gameManager.getSelectedMaterial());
                 remainingSeconds--;
             } else {
                 gameManager.startRevealPhase();

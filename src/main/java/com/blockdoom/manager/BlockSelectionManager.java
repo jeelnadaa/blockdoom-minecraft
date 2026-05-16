@@ -77,7 +77,7 @@ public class BlockSelectionManager {
                             if (!mat.isBlock() || mat.isAir() || mat == Material.WATER || mat == Material.LAVA) {
                                 continue;
                             }
-                            if (blacklist.contains(mat) || storageManager.isMaterialDeleted(mat)) {
+                            if (blacklist.contains(mat) || storageManager.isMaterialDeletedGlobally(mat)) {
                                 continue;
                             }
                             materialCounts.put(mat, materialCounts.getOrDefault(mat, 0) + 1);

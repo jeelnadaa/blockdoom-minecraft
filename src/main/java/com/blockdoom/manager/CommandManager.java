@@ -83,11 +83,17 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             }
             case "config" -> {
                 if (args.length < 3) {
-                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom config <timer|radius> <value></red>");
+                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom config <timer|radius|shownext> <value></red>");
                     return true;
                 }
                 String setting = args[1].toLowerCase();
                 try {
+                    if (setting.equals("shownext")) {
+                        boolean val = Boolean.parseBoolean(args[2]);
+                        configManager.setShowNextBlockDuringTimer(val);
+                        MessageUtil.sendMessage(sender, "<green>Show next block during timer updated to: " + val + "</green>");
+                        return true;
+                    }
                     int val = Integer.parseInt(args[2]);
                     if (setting.equals("timer")) {
                         configManager.setTimerDuration(val);
@@ -99,7 +105,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                         MessageUtil.sendMessage(sender, "<red>Unknown config setting: " + setting + "</red>");
                     }
                 } catch (NumberFormatException e) {
-                    MessageUtil.sendMessage(sender, "<red>Value must be an integer.</red>");
+                    MessageUtil.sendMessage(sender, "<red>Value must be a valid integer or boolean.</red>");
                 }
             }
             default -> sendHelp(sender);
@@ -118,7 +124,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom reload</yellow> <gray>- Reloads config.yml and storage</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcestart</yellow> <gray>- Forcefully starts the game</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcedelete <block></yellow> <gray>- Forces immediate deletion of a block</gray>");
-        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom config <timer|radius> <val></yellow> <gray>- Updates config on the fly</gray>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom config <timer|radius|shownext> <val></yellow> <gray>- Updates config on the fly</gray>");
     }
 
     private void sendStatus(CommandSender sender) {
@@ -144,9 +150,14 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 if (s.startsWith(args[0].toLowerCase())) completions.add(s);
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("config")) {
-            List<String> subs = Arrays.asList("timer", "radius");
+            List<String> subs = Arrays.asList("timer", "radius", "shownext");
             for (String s : subs) {
                 if (s.startsWith(args[1].toLowerCase())) completions.add(s);
+            }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("config") && args[1].equalsIgnoreCase("shownext")) {
+            List<String> subs = Arrays.asList("true", "false");
+            for (String s : subs) {
+                if (s.startsWith(args[2].toLowerCase())) completions.add(s);
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("forcedelete")) {
             for (Material mat : Material.values()) {

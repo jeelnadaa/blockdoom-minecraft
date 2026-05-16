@@ -20,9 +20,18 @@ public class UIManager {
         this.configManager = configManager;
     }
 
-    public void broadcastTimerTick(int remainingSeconds) {
+    public void broadcastTimerTick(int remainingSeconds, Material nextMaterial) {
         String timeFormatted = formatTime(remainingSeconds);
-        String rawMsg = configManager.getActionbarTimer().replace("%time%", timeFormatted);
+        String rawMsg;
+
+        if (configManager.isShowNextBlockDuringTimer() && nextMaterial != null) {
+            rawMsg = configManager.getActionbarTimerWithBlock()
+                    .replace("%block%", formatMaterialName(nextMaterial))
+                    .replace("%time%", timeFormatted);
+        } else {
+            rawMsg = configManager.getActionbarTimer().replace("%time%", timeFormatted);
+        }
+
         Component comp = MessageUtil.format(rawMsg);
 
         for (Player player : Bukkit.getOnlinePlayers()) {
