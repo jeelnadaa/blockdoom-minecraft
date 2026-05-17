@@ -56,8 +56,8 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 gameManager.skip();
                 MessageUtil.sendMessage(sender, "<gold>Skipping to next cycle.</gold>");
             }
-            case "regenerate" -> {
-                gameManager.regenerate();
+            case "reset" -> {
+                gameManager.reset();
             }
             case "status" -> sendStatus(sender);
             case "reload" -> {
@@ -162,7 +162,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom start</yellow> <gray>- Starts the game loop</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom pause</yellow> <gray>- Pauses the game loop</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom skip</yellow> <gray>- Skips current countdown to reveal</gray>");
-        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom regenerate</yellow> <gray>- Safely wipes and regenerates gameplay worlds</gray>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom reset</yellow> <gray>- Wipes all deletion registries and timers clean</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom status</yellow> <gray>- Shows active game state and stats</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom reload</yellow> <gray>- Reloads config.yml and storage</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcestart</yellow> <gray>- Forcefully starts the game</gray>");
@@ -189,7 +189,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
         List<String> completions = new ArrayList<>();
         if (args.length == 1) {
-            List<String> subs = Arrays.asList("ui", "start", "pause", "skip", "regenerate", "status", "reload", "config", "blacklist", "forcestart", "forcedelete");
+            List<String> subs = Arrays.asList("ui", "start", "pause", "skip", "reset", "status", "reload", "config", "blacklist", "forcestart", "forcedelete");
             for (String s : subs) {
                 if (s.startsWith(args[0].toLowerCase())) completions.add(s);
             }

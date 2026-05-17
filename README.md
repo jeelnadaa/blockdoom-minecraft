@@ -1,12 +1,14 @@
 # BlockDoom - Multiplayer Survival Chaos Plugin
 
-**BlockDoom** is a production-quality, heavily optimized survival chaos plugin for Minecraft Paper 1.20.4. Every cycle, a global countdown timer ticks down. When it expires, a random valid block type existing naturally across active dimensions is selected and revealed globally. After a 5-second warning, all naturally generated instances of that block type in the selected dimension are permanently disintegrated. The chaos continues until players defeat the Ender Dragon or survival becomes impossible!
+**BlockDoom** is a production-quality, heavily optimized survival chaos plugin for Minecraft Paper 1.20.4. Every cycle, a global countdown timer ticks down. When it expires, a random solid naturally generated block type existing across active dimensions is selected and revealed globally. After a 5-second warning, all naturally generated instances of that block type in the selected dimension are permanently disintegrated. The chaos continues until players defeat the Ender Dragon or survival becomes impossible!
 
 ---
 
 ## 🎮 Core Gameplay Mechanics & Advanced Features
 
 - **Interactive In-Game GUI (`/blockdoom ui`)**: A fully immersive chest inventory menu allowing server admins to view, adjust, and toggle all settings (timer, speed, build protection, early reveal, auto-reload) with left/right/shift clicks and real-time chat/sound feedback. Includes a multi-page interactive **Blacklist Manager**.
+- **Seamless Native Server Integration**: Runs directly inside your standard server worlds (`world`, `world_nether`, `world_the_end`) without creating any messy custom world directories or custom world generators.
+- **Strict Whole Block Filtering**: Candidate blocks are strictly filtered to solid, naturally generated full blocks (e.g. Stone, Ores, Logs, Planks, Dirt, Basalt, Netherrack, End Stone). Small decorative plants, flowers, grass, kelp, vines, and fluids are perfectly excluded.
 - **Probabilistic Dimension Selection**: Only dimensions containing active players are selected, weighted by player count (e.g. 3 players in Overworld and 1 in Nether = 75% Overworld, 25% Nether).
 - **Dimension Isolation & Global Fallback**: Deletion cycles and registries are strictly isolated per dimension. Deleting Overworld Stone leaves Nether Stone perfectly safe. If the active dimension has 0 naturally generated blocks left, the plugin instantly searches remaining dimensions before ever triggering defeat.
 - **Global Loaded Chunk Snapshot Scanning**: To ensure peak server performance, BlockDoom asynchronously inspects chunk snapshots of all loaded chunks across the dimension to build a comprehensive candidate block list without locking the main thread.
@@ -27,10 +29,10 @@ game:
   show-next-block-during-timer: false # If true, reveals the next block in actionbar during the timer.
   protect-player-builds: true # If true, manually placed blocks are protected from deletion.
   auto-reload-on-config-change: true # If true, updates via command or GUI take effect instantly.
-  enabled-dimensions:     # Dedicated gameplay world names used by the plugin.
-    overworld: "blockdoom_overworld"
-    nether: "blockdoom_nether"
-    end: "blockdoom_end"
+  enabled-dimensions:     # Standard gameplay world names used by the server.
+    overworld: "world"
+    nether: "world_nether"
+    end: "world_the_end"
 
 performance:
   chunks-per-tick: 10     # Number of full loaded chunks scrubbed for deletion per server tick (20 ticks/sec).
@@ -63,7 +65,7 @@ All commands require the permission `blockdoom.admin` (default: server operators
 | `/blockdoom start` | `/blockdoom start` | Starts or resumes the global countdown and gameplay loop. |
 | `/blockdoom pause` | `/blockdoom pause` | Pauses the active countdown or deletion cycle instantly. |
 | `/blockdoom skip` | `/blockdoom skip` | Skips the current countdown timer directly to the block reveal phase. |
-| `/blockdoom regenerate` | `/blockdoom regenerate` | **World Reset**: Safely teleports players to the root server world, wipes custom gameplay worlds (`blockdoom_*`), and generates fresh pristine worlds. All registries are reset. |
+| `/blockdoom reset` | `/blockdoom reset` | **Game Reset**: Wipes all deletion registries and timers clean to restart the challenge. |
 | `/blockdoom status` | `/blockdoom status` | Displays current game state, active dimension, target block, and total erased materials count. |
 | `/blockdoom reload` | `/blockdoom reload` | Live reloads `config.yml`, `deleted_materials.yml`, and placement data instantly. |
 | `/blockdoom forcestart` | `/blockdoom forcestart` | Forcefully starts the game loop. |
@@ -114,5 +116,5 @@ d:\blockdoom\build\libs\BlockDoom-1.0.0.jar
 ### 3. Installation Steps
 1. Copy `BlockDoom-1.0.0.jar` from `build/libs/` into your Paper server's `plugins/` folder.
 2. Start or restart your server.
-3. The plugin will automatically generate its configuration files and custom gameplay worlds upon startup.
+3. The plugin will automatically generate its configuration files upon startup.
 4. When ready, join the server and execute `/blockdoom start` (or `/blockdoom ui` to configure) to initiate the chaos!

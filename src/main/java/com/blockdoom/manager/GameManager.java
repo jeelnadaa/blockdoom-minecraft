@@ -22,7 +22,6 @@ public class GameManager {
     private final DeletionManager deletionManager;
     private final UIManager uiManager;
     private final WinLossManager winLossManager;
-    private final WorldRegenerationManager worldRegenerationManager;
     private TimerManager timerManager;
 
     private GameState state = GameState.WAITING;
@@ -32,8 +31,7 @@ public class GameManager {
 
     public GameManager(BlockDoomPlugin plugin, ConfigManager configManager, StorageManager storageManager,
                        DimensionManager dimensionManager, BlockSelectionManager blockSelectionManager,
-                       DeletionManager deletionManager, UIManager uiManager,
-                       WorldRegenerationManager worldRegenerationManager) {
+                       DeletionManager deletionManager, UIManager uiManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.storageManager = storageManager;
@@ -41,7 +39,6 @@ public class GameManager {
         this.blockSelectionManager = blockSelectionManager;
         this.deletionManager = deletionManager;
         this.uiManager = uiManager;
-        this.worldRegenerationManager = worldRegenerationManager;
         this.winLossManager = new WinLossManager(this);
     }
 
@@ -70,10 +67,6 @@ public class GameManager {
 
     public void start() {
         if (state == GameState.RUNNING) {
-            return;
-        }
-        if (worldRegenerationManager.isRegenerating()) {
-            MessageUtil.broadcast("<red>Cannot start game while world is regenerating!</red>");
             return;
         }
         if (state == GameState.PAUSED) {
@@ -118,7 +111,6 @@ public class GameManager {
         if (material == null || !material.isBlock()) {
             return;
         }
-        if (worldRegenerationManager.isRegenerating()) return;
         World dimension = dimensionManager.selectDimension();
         if (dimension == null) return;
 
@@ -135,15 +127,14 @@ public class GameManager {
         });
     }
 
-    public void regenerate() {
+    public void reset() {
         state = GameState.WAITING;
         selectedMaterial = null;
         timerManager.stop();
         deletionManager.stop();
-        worldRegenerationManager.regenerateWorlds(() -> {
-            state = GameState.WAITING;
-            timerManager.resetTimer();
-        });
+        storageManager.resetAll();
+        timerManager.resetTimer();
+        MessageUtil.broadcast("<yellow><bold>GAME RESET:</bold></yellow> All deletion registries and timers have been wiped clean.");
     }
 
     public void startRevealPhase() {

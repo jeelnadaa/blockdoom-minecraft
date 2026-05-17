@@ -19,7 +19,6 @@ public class BlockDoomPlugin extends JavaPlugin {
     private BlockSelectionManager blockSelectionManager;
     private DeletionManager deletionManager;
     private UIManager uiManager;
-    private WorldRegenerationManager worldRegenerationManager;
     private GameManager gameManager;
     private TimerManager timerManager;
 
@@ -34,18 +33,14 @@ public class BlockDoomPlugin extends JavaPlugin {
         this.blockSelectionManager = new BlockSelectionManager(this, configManager, storageManager);
         this.deletionManager = new DeletionManager(this, configManager, storageManager);
         this.uiManager = new UIManager(configManager);
-        this.worldRegenerationManager = new WorldRegenerationManager(this, configManager, storageManager);
 
         this.gameManager = new GameManager(
                 this, configManager, storageManager, dimensionManager,
-                blockSelectionManager, deletionManager, uiManager, worldRegenerationManager
+                blockSelectionManager, deletionManager, uiManager
         );
 
         this.timerManager = new TimerManager(this, gameManager, uiManager, configManager);
         this.gameManager.setTimerManager(timerManager);
-
-        // Ensure custom gameplay worlds are created on startup
-        this.worldRegenerationManager.initializeWorlds();
 
         // Register Commands
         CommandManager commandManager = new CommandManager(this, gameManager, configManager, storageManager);
@@ -56,8 +51,8 @@ public class BlockDoomPlugin extends JavaPlugin {
         }
 
         // Register Listeners
-        Bukkit.getPluginManager().registerEvents(new BlockListener(configManager, placementTrackingManager, storageManager, worldRegenerationManager), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerListener(gameManager, configManager, worldRegenerationManager), this);
+        Bukkit.getPluginManager().registerEvents(new BlockListener(configManager, placementTrackingManager, storageManager), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerListener(gameManager, configManager), this);
         Bukkit.getPluginManager().registerEvents(new WorldListener(deletionManager), this);
         Bukkit.getPluginManager().registerEvents(new com.blockdoom.gui.GUIListener(configManager), this);
 

@@ -2,7 +2,6 @@ package com.blockdoom.listener;
 
 import com.blockdoom.manager.ConfigManager;
 import com.blockdoom.manager.GameManager;
-import com.blockdoom.manager.WorldRegenerationManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.EnderDragon;
@@ -17,26 +16,22 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import java.util.Map;
 
 /**
- * Handles player joins, respawns, and dragon death victory checks.
+ * Handles player joins, respawns, and dragon death victory checks directly in the server's natural worlds.
  */
 public class PlayerListener implements Listener {
     private final GameManager gameManager;
     private final ConfigManager configManager;
-    private final WorldRegenerationManager worldRegenerationManager;
 
-    public PlayerListener(GameManager gameManager, ConfigManager configManager, WorldRegenerationManager worldRegenerationManager) {
+    public PlayerListener(GameManager gameManager, ConfigManager configManager) {
         this.gameManager = gameManager;
         this.configManager = configManager;
-        this.worldRegenerationManager = worldRegenerationManager;
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if (worldRegenerationManager.isRegenerating()) return;
-
         Player player = event.getPlayer();
         Map<String, String> enabled = configManager.getEnabledDimensions();
-        String overworldName = enabled.getOrDefault("overworld", "blockdoom_overworld");
+        String overworldName = enabled.getOrDefault("overworld", "world");
 
         World targetWorld = Bukkit.getWorld(overworldName);
         if (targetWorld != null && !player.getWorld().getName().equals(overworldName)) {
@@ -46,10 +41,8 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        if (worldRegenerationManager.isRegenerating()) return;
-
         Map<String, String> enabled = configManager.getEnabledDimensions();
-        String overworldName = enabled.getOrDefault("overworld", "blockdoom_overworld");
+        String overworldName = enabled.getOrDefault("overworld", "world");
 
         World targetWorld = Bukkit.getWorld(overworldName);
         if (targetWorld != null) {

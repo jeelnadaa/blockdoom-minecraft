@@ -4,15 +4,16 @@ game:
   show-next-block-during-timer: false # If true, reveals the next block in actionbar during the timer.
   protect-player-builds: true # If true, manually placed blocks are protected from deletion.
   auto-reload-on-config-change: true # If true, updates via command or GUI take effect instantly.
-  enabled-dimensions:     # Dedicated gameplay world names used by the plugin.
-    overworld: "blockdoom_overworld"
-    nether: "blockdoom_nether"
-    end: "blockdoom_end"
+  enabled-dimensions:     # Standard gameplay world names used by the server.
+    overworld: "world"
+    nether: "world_nether"
+    end: "world_the_end"
 
 performance:
-  chunks-per-tick: 10     # Number of loaded chunks processed for deletion per server tick (20 ticks/sec).
+  chunks-per-tick: 10     # Number of full loaded chunks scrubbed for deletion per server tick (20 ticks/sec).
 
 blacklist:
+  # Unbreakables & Technical
   - BEDROCK
   - NETHER_PORTAL
   - END_PORTAL
@@ -30,6 +31,80 @@ blacklist:
   - LAVA
   - FIRE
   - SOUL_FIRE
+  # Flowers & Small Plants
+  - DANDELION
+  - POPPY
+  - BLUE_ORCHID
+  - ALLIUM
+  - AZURE_BLUET
+  - RED_TULIP
+  - ORANGE_TULIP
+  - WHITE_TULIP
+  - PINK_TULIP
+  - OXEYE_DAISY
+  - CORNFLOWER
+  - LILY_OF_THE_VALLEY
+  - WITHER_ROSE
+  - TORCHFLOWER
+  - PITCHER_PLANT
+  - SPORE_BLOSSOM
+  - SUNFLOWER
+  - LILAC
+  - ROSE_BUSH
+  - PEONY
+  # Grasses, Ferns & Aquatic Plants
+  - GRASS
+  - FERN
+  - TALL_GRASS
+  - LARGE_FERN
+  - SEAGRASS
+  - TALL_SEAGRASS
+  - KELP
+  - KELP_PLANT
+  - HANGING_ROOTS
+  - LILY_PAD
+  - FROGSPAWN
+  # Fungi & Nether Flora
+  - BROWN_MUSHROOM
+  - RED_MUSHROOM
+  - CRIMSON_FUNGUS
+  - WARPED_FUNGUS
+  - CRIMSON_ROOTS
+  - WARPED_ROOTS
+  - NETHER_SPROUTS
+  - WEEPING_VINES
+  - WEEPING_VINES_PLANT
+  - TWISTING_VINES
+  - TWISTING_VINES_PLANT
+  - VINE
+  - GLOW_LICHEN
+  # Saplings & Bushes
+  - OAK_SAPLING
+  - SPRUCE_SAPLING
+  - BIRCH_SAPLING
+  - JUNGLE_SAPLING
+  - ACACIA_SAPLING
+  - DARK_OAK_SAPLING
+  - MANGROVE_PROPAGULE
+  - CHERRY_SAPLING
+  - DEAD_BUSH
+  - AZALEA
+  - FLOWERING_AZALEA
+  - SWEET_BERRY_BUSH
+  # Crops & Fragiles
+  - WHEAT
+  - CARROTS
+  - POTATOES
+  - BEETROOTS
+  - MELON_STEM
+  - PUMPKIN_STEM
+  - ATTACHED_MELON_STEM
+  - ATTACHED_PUMPKIN_STEM
+  - COCOA
+  - SUGAR_CANE
+  - BAMBOO_SAPLING
+  - TURTLE_EGG
+  - SNIFFER_EGG
 
 messages:
   timer-tick: "<green>Time until next block deletion: <gold><bold>%time%s</bold></gold></green>"

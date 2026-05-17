@@ -59,9 +59,9 @@ public class ConfigManager {
                 enabledDimensions.put(key, config.getString("game.enabled-dimensions." + key));
             }
         } else {
-            enabledDimensions.put("overworld", "blockdoom_overworld");
-            enabledDimensions.put("nether", "blockdoom_nether");
-            enabledDimensions.put("end", "blockdoom_end");
+            enabledDimensions.put("overworld", "world");
+            enabledDimensions.put("nether", "world_nether");
+            enabledDimensions.put("end", "world_the_end");
         }
 
         chunksPerTick = config.getInt("performance.chunks-per-tick", 10);

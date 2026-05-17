@@ -60,7 +60,8 @@ public class BlockSelectionManager {
                                 continue;
                             }
                             Material mat = snapshot.getBlockType(x, y, z);
-                            if (!mat.isBlock() || mat.isAir() || mat == Material.WATER || mat == Material.LAVA) {
+                            // Strictly filter to solid blocks (excludes flowers, grass, kelp, vines, fluids, air)
+                            if (!mat.isBlock() || !mat.isSolid() || mat.isAir()) {
                                 continue;
                             }
                             if (blacklist.contains(mat) || storageManager.isMaterialDeletedInWorld(worldId, mat)) {

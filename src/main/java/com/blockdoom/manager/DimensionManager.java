@@ -36,12 +36,11 @@ public class DimensionManager {
         }
 
         if (totalPlayers == 0 || counts.isEmpty()) {
-            String overworldName = enabled.getOrDefault("overworld", "blockdoom_overworld");
+            String overworldName = enabled.getOrDefault("overworld", "world");
             World overworld = Bukkit.getWorld(overworldName);
             if (overworld != null) {
                 return overworld;
             }
-            // Fallback to primary server world if custom world not loaded yet
             return Bukkit.getWorlds().get(0);
         }
 
