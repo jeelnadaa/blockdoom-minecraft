@@ -1,7 +1,9 @@
 package com.blockdoom.manager;
 
 import com.blockdoom.BlockDoomPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -63,6 +65,7 @@ public class ConfigManager {
             enabledDimensions.put("nether", "world_nether");
             enabledDimensions.put("end", "world_the_end");
         }
+        resolveDimensionNames();
 
         chunksPerTick = config.getInt("performance.chunks-per-tick", 10);
 
@@ -115,6 +118,71 @@ public class ConfigManager {
         if (autoReloadOnConfigChange && reloadCallback != null) {
             reloadCallback.run();
             plugin.getServer().broadcastMessage("§a[BlockDoom] Configuration updated and auto-reloaded successfully!");
+        }
+    }
+
+    private void resolveDimensionNames() {
+        List<World> worlds = Bukkit.getWorlds();
+        if (worlds.isEmpty()) {
+            return;
+        }
+
+        World firstNormal = null;
+        World firstNether = null;
+        World firstEnd = null;
+
+        for (World w : worlds) {
+            if (w.getEnvironment() == World.Environment.NORMAL && firstNormal == null) {
+                firstNormal = w;
+            } else if (w.getEnvironment() == World.Environment.NETHER && firstNether == null) {
+                firstNether = w;
+            } else if (w.getEnvironment() == World.Environment.THE_END && firstEnd == null) {
+                firstEnd = w;
+            }
+        }
+
+        // 1. Overworld
+        String overworldName = enabledDimensions.get("overworld");
+        if (overworldName == null || Bukkit.getWorld(overworldName) == null) {
+            String detected = firstNormal != null ? firstNormal.getName() : worlds.get(0).getName();
+            plugin.getLogger().info("Dimension 'overworld' (" + overworldName + ") not found. Auto-detected: " + detected);
+            enabledDimensions.put("overworld", detected);
+        }
+
+        // 2. Nether
+        String netherName = enabledDimensions.get("nether");
+        if (netherName == null || Bukkit.getWorld(netherName) == null) {
+            String detected = null;
+            if (firstNether != null) {
+                detected = firstNether.getName();
+            } else {
+                String base = enabledDimensions.get("overworld");
+                if (Bukkit.getWorld(base + "_nether") != null) {
+                    detected = base + "_nether";
+                }
+            }
+            if (detected != null) {
+                plugin.getLogger().info("Dimension 'nether' (" + netherName + ") not found. Auto-detected: " + detected);
+                enabledDimensions.put("nether", detected);
+            }
+        }
+
+        // 3. End
+        String endName = enabledDimensions.get("end");
+        if (endName == null || Bukkit.getWorld(endName) == null) {
+            String detected = null;
+            if (firstEnd != null) {
+                detected = firstEnd.getName();
+            } else {
+                String base = enabledDimensions.get("overworld");
+                if (Bukkit.getWorld(base + "_the_end") != null) {
+                    detected = base + "_the_end";
+                }
+            }
+            if (detected != null) {
+                plugin.getLogger().info("Dimension 'end' (" + endName + ") not found. Auto-detected: " + detected);
+                enabledDimensions.put("end", detected);
+            }
         }
     }
 
