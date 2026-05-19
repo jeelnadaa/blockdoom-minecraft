@@ -146,9 +146,10 @@ public class DeletionManager {
             }
         }
 
-        int chunksToProcess = configManager.getChunksPerTick();
+        int chunksProcessed = 0;
+        int maxChunksToProcess = configManager.getChunksPerTick();
 
-        for (int c = 0; c < chunksToProcess && (!activeQueue.isEmpty() || !backgroundQueue.isEmpty()); c++) {
+        while (chunksProcessed < maxChunksToProcess && (!activeQueue.isEmpty() || !backgroundQueue.isEmpty())) {
             ChunkPos pos = !activeQueue.isEmpty() ? activeQueue.pollFirst() : backgroundQueue.pollFirst();
             queuedSet.remove(pos);
 
@@ -200,6 +201,7 @@ public class DeletionManager {
 
             // Chunk completely scrubbed in full! Save the cycle count into NBT.
             chunk.getPersistentDataContainer().set(scrubKey, PersistentDataType.INTEGER, targetCycle);
+            chunksProcessed++;
         }
     }
 }

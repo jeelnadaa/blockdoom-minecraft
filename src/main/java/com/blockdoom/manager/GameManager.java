@@ -129,7 +129,7 @@ public class GameManager {
         if (isScanning) return;
         isScanning = true;
 
-        if (activeDimension == null) {
+        if (activeDimension == null || (remainingScanSeconds > 0 && activeDimension.getPlayers().isEmpty())) {
             activeDimension = dimensionManager.selectDimension();
         }
         if (activeDimension == null) {
