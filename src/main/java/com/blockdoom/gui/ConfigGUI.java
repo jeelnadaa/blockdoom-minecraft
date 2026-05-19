@@ -81,6 +81,20 @@ public final class ConfigGUI {
         );
         inv.setItem(15, createItem(Material.REPEATER, "<yellow><bold>Auto Reload Config</bold></yellow>", autoLore));
 
+        // Slot 16: Player Selection Range
+        int range = configManager.getSelectionRange();
+        String rangeStr = range == 0 ? "<aqua><bold>Unlimited</bold></aqua>" : "<aqua><bold>" + range + " chunks</bold></aqua>";
+        List<String> rangeLore = List.of(
+                "<gray>Current: " + rangeStr + "</gray>",
+                "<gray>If unlimited, scans all loaded chunks.</gray>",
+                "",
+                "<yellow>Left-Click: <green>+1 chunk</green></yellow>",
+                "<yellow>Right-Click: <red>-1 chunk</red></yellow>",
+                "<yellow>Shift-Left: <green>+4 chunks</green></yellow>",
+                "<yellow>Shift-Right: <red>-4 chunks</red></yellow>"
+        );
+        inv.setItem(16, createItem(Material.COMPASS, "<aqua><bold>Player Selection Range (Chunks)</bold></aqua>", rangeLore));
+
         // Slot 22: Manage Blacklist Button
         List<String> blLore = List.of(
                 "<gray>Total Blacklisted: <red><bold>" + configManager.getBlacklist().size() + " blocks</bold></red></gray>",

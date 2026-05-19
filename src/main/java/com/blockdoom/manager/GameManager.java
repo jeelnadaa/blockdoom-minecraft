@@ -51,20 +51,6 @@ public class GameManager {
     public Material getSelectedMaterial() { return selectedMaterial; }
     public WinLossManager getWinLossManager() { return winLossManager; }
 
-    public void prepareNextCycleBlockIfConfigured() {
-        if (configManager.isShowNextBlockDuringTimer()) {
-            World dim = dimensionManager.selectDimension();
-            if (dim != null) {
-                blockSelectionManager.selectBlockAsync(dim, mat -> {
-                    selectedMaterial = mat;
-                    activeDimension = dim;
-                });
-            }
-        } else {
-            selectedMaterial = null;
-        }
-    }
-
     public void start() {
         if (state == GameState.RUNNING) {
             return;
@@ -80,7 +66,7 @@ public class GameManager {
         }
         state = GameState.RUNNING;
         deletionManager.resume();
-        prepareNextCycleBlockIfConfigured();
+        selectedMaterial = null;
         timerManager.start();
         MessageUtil.broadcast("<green><bold>GAME STARTED:</bold></green> The countdown has begun. Brace yourselves for deletion!");
     }
@@ -121,8 +107,8 @@ public class GameManager {
         uiManager.broadcastDeletionStart(material);
         deletionManager.startDeletion(dimension, material, () -> {
             state = GameState.RUNNING;
+            selectedMaterial = null;
             timerManager.resetTimer();
-            prepareNextCycleBlockIfConfigured();
             MessageUtil.broadcast("<green><bold>CYCLE COMPLETE:</bold></green> All natural " + material.name() + " deleted! Starting next countdown.");
         });
     }
@@ -137,34 +123,39 @@ public class GameManager {
         MessageUtil.broadcast("<yellow><bold>GAME RESET:</bold></yellow> All deletion registries and timers have been wiped clean.");
     }
 
-    public void startRevealPhase() {
-        if (state != GameState.RUNNING) return;
+    private boolean isScanning = false;
 
-        if (configManager.isShowNextBlockDuringTimer() && selectedMaterial != null && activeDimension != null) {
-            state = GameState.REVEALING;
-            uiManager.broadcastReveal(selectedMaterial);
+    public void performScanningTick(int remainingScanSeconds) {
+        if (isScanning) return;
+        isScanning = true;
+
+        if (activeDimension == null) {
+            activeDimension = dimensionManager.selectDimension();
+        }
+        if (activeDimension == null) {
+            isScanning = false;
             return;
         }
 
-        World firstChoice = dimensionManager.selectDimension();
-        if (firstChoice == null) {
-            lose();
-            return;
-        }
-
-        state = GameState.REVEALING; // Switch state instantly to hold countdown
-        List<String> enabledWorldNames = new ArrayList<>(configManager.getEnabledDimensions().values());
-        trySelectAcrossDimensions(firstChoice, enabledWorldNames);
+        boolean aroundPlayers = remainingScanSeconds > 0;
+        blockSelectionManager.selectBlockAsync(activeDimension, aroundPlayers, mat -> {
+            isScanning = false;
+            if (mat != null) {
+                selectedMaterial = mat;
+            } else if (remainingScanSeconds == 0) {
+                List<String> enabledWorldNames = new ArrayList<>(configManager.getEnabledDimensions().values());
+                trySelectAcrossDimensions(activeDimension, enabledWorldNames);
+            }
+        });
     }
 
     private void trySelectAcrossDimensions(World currentWorld, List<String> remainingWorldNames) {
         remainingWorldNames.removeIf(name -> name.equalsIgnoreCase(currentWorld.getName()));
 
-        blockSelectionManager.selectBlockAsync(currentWorld, material -> {
+        blockSelectionManager.selectBlockAsync(currentWorld, false, material -> {
             if (material != null) {
                 selectedMaterial = material;
                 activeDimension = currentWorld;
-                uiManager.broadcastReveal(material);
             } else if (!remainingWorldNames.isEmpty()) {
                 String nextWorldName = remainingWorldNames.remove(0);
                 World nextWorld = Bukkit.getWorld(nextWorldName);
@@ -174,10 +165,22 @@ public class GameManager {
                     trySelectAcrossDimensions(currentWorld, remainingWorldNames);
                 }
             } else {
-                // All enabled dimensions have literally 0 natural candidate blocks left! Defeat!
+                // All enabled dimensions are completely empty!
+                MessageUtil.broadcast("<red>All enabled dimensions are completely empty of naturally generated solid blocks!</red>");
                 winLossManager.handleNoProgression();
             }
         });
+    }
+
+    public void startRevealPhase() {
+        if (state != GameState.RUNNING) return;
+
+        if (selectedMaterial != null && activeDimension != null) {
+            state = GameState.REVEALING;
+            uiManager.broadcastReveal(selectedMaterial);
+        } else {
+            lose();
+        }
     }
 
     public void startDeletionPhase() {
@@ -185,12 +188,13 @@ public class GameManager {
 
         state = GameState.DELETING;
         uiManager.broadcastDeletionStart(selectedMaterial);
+        String matName = selectedMaterial.name();
         deletionManager.startDeletion(activeDimension, selectedMaterial, () -> {
             if (state == GameState.DELETING) {
                 state = GameState.RUNNING;
+                selectedMaterial = null;
                 timerManager.resetTimer();
-                prepareNextCycleBlockIfConfigured();
-                MessageUtil.broadcast("<green><bold>CYCLE COMPLETE:</bold></green> All natural " + selectedMaterial.name() + " deleted! Starting next countdown.");
+                MessageUtil.broadcast("<green><bold>CYCLE COMPLETE:</bold></green> All natural " + matName + " deleted! Starting next countdown.");
             }
         });
     }

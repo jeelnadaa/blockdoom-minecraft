@@ -77,6 +77,18 @@ public class GUIListener implements Listener {
                 SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
                 MessageUtil.sendMessage(player, "<green>Auto-reload on config change updated to: <gold><bold>" + next + "</bold></gold></green>");
                 ConfigGUI.openMainConfig(player, configManager);
+            } else if (slot == 16) { // Selection Range
+                int current = configManager.getSelectionRange();
+                if (click == ClickType.SHIFT_LEFT) current += 4;
+                else if (click == ClickType.SHIFT_RIGHT) current -= 4;
+                else if (click == ClickType.LEFT) current += 1;
+                else if (click == ClickType.RIGHT) current -= 1;
+
+                configManager.setSelectionRange(current);
+                SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.2f);
+                String displayRange = configManager.getSelectionRange() == 0 ? "Unlimited" : configManager.getSelectionRange() + " chunks";
+                MessageUtil.sendMessage(player, "<green>Selection range changed to <gold><bold>" + displayRange + "</bold></gold></green>");
+                ConfigGUI.openMainConfig(player, configManager);
             } else if (slot == 22) { // Manage Blacklist Button
                 SoundUtil.playSound(player, "UI_BUTTON_CLICK", 0.5f, 1.0f);
                 ConfigGUI.openBlacklistGUI(player, configManager, 0);

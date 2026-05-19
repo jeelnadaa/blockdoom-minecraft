@@ -62,9 +62,6 @@ public class BlockDoomPlugin extends JavaPlugin {
             if (timerManager != null) {
                 timerManager.resetTimer();
             }
-            if (gameManager != null) {
-                gameManager.prepareNextCycleBlockIfConfigured();
-            }
         });
 
         getLogger().info("BlockDoom successfully enabled!");
@@ -84,4 +81,5 @@ public class BlockDoomPlugin extends JavaPlugin {
     public ConfigManager getConfigManager() { return configManager; }
     public StorageManager getStorageManager() { return storageManager; }
     public GameManager getGameManager() { return gameManager; }
+    public BlockSelectionManager getBlockSelectionManager() { return blockSelectionManager; }
 }

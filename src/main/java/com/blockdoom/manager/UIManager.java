@@ -44,6 +44,14 @@ public class UIManager {
         }
     }
 
+    public void broadcastScanningTick(int seconds) {
+        String msg = "<gold><bold>Scanning for next target...</bold></gold> <yellow>(" + seconds + "s)</yellow>";
+        Component comp = MessageUtil.format(msg);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendActionBar(comp);
+        }
+    }
+
     public void broadcastRevealingTick(Material material, int remainingRevealSeconds) {
         String matName = formatMaterialName(material);
         String rawMsg = configManager.getActionbarRevealing()

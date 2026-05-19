@@ -17,6 +17,7 @@ public class TimerManager {
     private BukkitTask task;
     private int remainingSeconds;
     private int remainingRevealSeconds;
+    private int remainingScanSeconds;
 
     public TimerManager(BlockDoomPlugin plugin, GameManager gameManager, UIManager uiManager, ConfigManager configManager) {
         this.plugin = plugin;
@@ -43,6 +44,7 @@ public class TimerManager {
     public void resetTimer() {
         this.remainingSeconds = configManager.getTimerDuration();
         this.remainingRevealSeconds = configManager.getRevealDelay();
+        this.remainingScanSeconds = 5;
     }
 
     public void setRemainingSeconds(int seconds) {
@@ -61,6 +63,15 @@ public class TimerManager {
         }
 
         if (state == GameState.RUNNING) {
+            if (gameManager.getSelectedMaterial() == null) {
+                uiManager.broadcastScanningTick(remainingScanSeconds);
+                gameManager.performScanningTick(remainingScanSeconds);
+                if (remainingScanSeconds > 0) {
+                    remainingScanSeconds--;
+                }
+                return;
+            }
+
             if (remainingSeconds > 0) {
                 uiManager.broadcastTimerTick(remainingSeconds, gameManager.getSelectedMaterial());
                 remainingSeconds--;

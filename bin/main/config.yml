@@ -4,6 +4,7 @@ game:
   show-next-block-during-timer: false # If true, reveals the next block in actionbar during the timer.
   protect-player-builds: true # If true, manually placed blocks are protected from deletion.
   auto-reload-on-config-change: true # If true, updates via command or GUI take effect instantly.
+  selection-range: 8      # Range in chunks around players within which blocks can be selected (0 = unlimited).
   enabled-dimensions:     # Standard gameplay world names used by the server.
     overworld: "world"
     nether: "world_nether"

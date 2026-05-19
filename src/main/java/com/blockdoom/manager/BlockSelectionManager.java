@@ -6,6 +6,7 @@ import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,13 +26,38 @@ public class BlockSelectionManager {
         this.storageManager = storageManager;
     }
 
-    public void selectBlockAsync(World dimension, Consumer<Material> callback) {
+    public void selectBlockAsync(World dimension, boolean aroundPlayers, Consumer<Material> callback) {
         Set<ChunkSnapshot> snapshots = new HashSet<>();
         UUID worldId = dimension.getUID();
+        int range = configManager.getSelectionRange();
+        List<Player> players = dimension.getPlayers();
 
-        // Gather chunk snapshots of all currently loaded chunks across the entire dimension
+        // Gather chunk snapshots of chunks within the selection-range (chunks) of any player in this dimension
         for (Chunk chunk : dimension.getLoadedChunks()) {
-            snapshots.add(chunk.getChunkSnapshot());
+            boolean inRange = false;
+            if (!aroundPlayers || range <= 0 || players.isEmpty()) {
+                inRange = true;
+            } else {
+                int cx = chunk.getX();
+                int cz = chunk.getZ();
+                for (Player player : players) {
+                    int px = player.getLocation().getBlockX() >> 4;
+                    int pz = player.getLocation().getBlockZ() >> 4;
+                    if (Math.abs(cx - px) <= range && Math.abs(cz - pz) <= range) {
+                        inRange = true;
+                        break;
+                    }
+                }
+            }
+            if (inRange) {
+                snapshots.add(chunk.getChunkSnapshot());
+            }
+        }
+
+        if (snapshots.isEmpty()) {
+            for (Chunk chunk : dimension.getLoadedChunks()) {
+                snapshots.add(chunk.getChunkSnapshot());
+            }
         }
 
         if (snapshots.isEmpty()) {
@@ -91,6 +117,50 @@ public class BlockSelectionManager {
 
             Material selected = validCandidates.get(new Random().nextInt(validCandidates.size()));
             Bukkit.getScheduler().runTask(plugin, () -> callback.accept(selected));
+        });
+    }
+
+    public void getRemainingBlocksAsync(World dimension, Consumer<Set<Material>> callback) {
+        Set<ChunkSnapshot> snapshots = new HashSet<>();
+        UUID worldId = dimension.getUID();
+
+        for (Chunk chunk : dimension.getLoadedChunks()) {
+            snapshots.add(chunk.getChunkSnapshot());
+        }
+
+        if (snapshots.isEmpty()) {
+            callback.accept(Collections.emptySet());
+            return;
+        }
+
+        Set<Material> blacklist = configManager.getBlacklist();
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            Set<Material> remaining = new HashSet<>();
+
+            for (ChunkSnapshot snapshot : snapshots) {
+                int sX = snapshot.getX();
+                int sZ = snapshot.getZ();
+                int minY = dimension.getMinHeight();
+                int maxY = dimension.getMaxHeight();
+
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        for (int y = minY; y < maxY; y++) {
+                            Material mat = snapshot.getBlockType(x, y, z);
+                            if (!mat.isBlock() || !mat.isSolid() || mat.isAir()) {
+                                continue;
+                            }
+                            if (blacklist.contains(mat) || storageManager.isMaterialDeletedInWorld(worldId, mat)) {
+                                continue;
+                            }
+                            remaining.add(mat);
+                        }
+                    }
+                }
+            }
+
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(remaining));
         });
     }
 }

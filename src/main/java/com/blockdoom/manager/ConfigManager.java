@@ -26,6 +26,7 @@ public class ConfigManager {
     private boolean protectPlayerBuilds;
     private boolean autoReloadOnConfigChange;
     private int chunksPerTick;
+    private int selectionRange;
     private final Map<String, String> enabledDimensions = new ConcurrentHashMap<>();
     private final Set<Material> blacklist = ConcurrentHashMap.newKeySet();
     private final Map<String, String> messages = new ConcurrentHashMap<>();
@@ -54,6 +55,7 @@ public class ConfigManager {
         showNextBlockDuringTimer = config.getBoolean("game.show-next-block-during-timer", false);
         protectPlayerBuilds = config.getBoolean("game.protect-player-builds", true);
         autoReloadOnConfigChange = config.getBoolean("game.auto-reload-on-config-change", true);
+        selectionRange = config.getInt("game.selection-range", 128);
 
         enabledDimensions.clear();
         if (config.contains("game.enabled-dimensions")) {
@@ -100,6 +102,7 @@ public class ConfigManager {
         config.set("game.show-next-block-during-timer", showNextBlockDuringTimer);
         config.set("game.protect-player-builds", protectPlayerBuilds);
         config.set("game.auto-reload-on-config-change", autoReloadOnConfigChange);
+        config.set("game.selection-range", selectionRange);
         config.set("performance.chunks-per-tick", chunksPerTick);
 
         List<String> bList = new ArrayList<>();
@@ -214,6 +217,12 @@ public class ConfigManager {
     public int getChunksPerTick() { return chunksPerTick; }
     public void setChunksPerTick(int chunksPerTick) {
         this.chunksPerTick = Math.max(1, chunksPerTick);
+        triggerAutoReload();
+    }
+
+    public int getSelectionRange() { return selectionRange; }
+    public void setSelectionRange(int selectionRange) {
+        this.selectionRange = Math.max(0, selectionRange);
         triggerAutoReload();
     }
 

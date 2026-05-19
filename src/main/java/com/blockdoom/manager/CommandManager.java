@@ -2,6 +2,7 @@ package com.blockdoom.manager;
 
 import com.blockdoom.BlockDoomPlugin;
 import com.blockdoom.util.MessageUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,7 +13,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Handles /blockdoom command execution and tab completion.
@@ -115,7 +118,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             }
             case "config" -> {
                 if (args.length < 3) {
-                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom config <timer|shownext|speed|protect|autoreload> <value></red>");
+                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom config <timer|shownext|speed|protect|autoreload|range> <value></red>");
                     return true;
                 }
                 String setting = args[1].toLowerCase();
@@ -143,11 +146,59 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                     } else if (setting.equals("speed")) {
                         configManager.setChunksPerTick(val);
                         MessageUtil.sendMessage(sender, "<green>Deletion speed updated to " + val + " chunks/tick.</green>");
+                    } else if (setting.equals("range")) {
+                        configManager.setSelectionRange(val);
+                        String display = val == 0 ? "Unlimited" : val + " chunks";
+                        MessageUtil.sendMessage(sender, "<green>Selection range updated to " + display + ".</green>");
                     } else {
                         MessageUtil.sendMessage(sender, "<red>Unknown config setting: " + setting + "</red>");
                     }
                 } catch (NumberFormatException e) {
                     MessageUtil.sendMessage(sender, "<red>Value must be a valid integer or boolean.</red>");
+                }
+            }
+            case "remaining" -> {
+                if (args.length < 2) {
+                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom remaining <dimension></red>");
+                    return true;
+                }
+                String dimName = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+                org.bukkit.World world = Bukkit.getWorld(dimName);
+                if (world == null) {
+                    MessageUtil.sendMessage(sender, "<red>Dimension '" + dimName + "' not found.</red>");
+                    return true;
+                }
+                MessageUtil.sendMessage(sender, "<yellow>Scanning remaining blocks in " + world.getName() + " asynchronously...</yellow>");
+                plugin.getBlockSelectionManager().getRemainingBlocksAsync(world, blocks -> {
+                    if (blocks.isEmpty()) {
+                        MessageUtil.sendMessage(sender, "<green>No remaining blocks found in " + world.getName() + ".</green>");
+                    } else {
+                        List<String> names = new ArrayList<>();
+                        for (Material m : blocks) names.add(m.name());
+                        Collections.sort(names);
+                        MessageUtil.sendMessage(sender, "<green>Remaining blocks in " + world.getName() + " (" + names.size() + "):</green> <gray>" + String.join(", ", names) + "</gray>");
+                    }
+                });
+            }
+            case "deleted" -> {
+                if (args.length < 2) {
+                    MessageUtil.sendMessage(sender, "<red>Usage: /blockdoom deleted <dimension></red>");
+                    return true;
+                }
+                String dimName = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+                org.bukkit.World world = Bukkit.getWorld(dimName);
+                if (world == null) {
+                    MessageUtil.sendMessage(sender, "<red>Dimension '" + dimName + "' not found.</red>");
+                    return true;
+                }
+                Set<Material> deleted = storageManager.getDeletedMaterialsForWorld(world.getUID());
+                if (deleted == null || deleted.isEmpty()) {
+                    MessageUtil.sendMessage(sender, "<green>No blocks have been deleted in " + world.getName() + " yet.</green>");
+                } else {
+                    List<String> names = new ArrayList<>();
+                    for (Material m : deleted) names.add(m.name());
+                    Collections.sort(names);
+                    MessageUtil.sendMessage(sender, "<red>Deleted blocks in " + world.getName() + " (" + names.size() + "):</red> <gray>" + String.join(", ", names) + "</gray>");
                 }
             }
             default -> sendHelp(sender);
@@ -167,8 +218,10 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom reload</yellow> <gray>- Reloads config.yml and storage</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcestart</yellow> <gray>- Forcefully starts the game</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom forcedelete <block></yellow> <gray>- Forces immediate deletion of a block</gray>");
-        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom config <timer|shownext|speed|protect|autoreload> <val></yellow> <gray>- Updates config on the fly</gray>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom config <timer|shownext|speed|protect|autoreload|range> <val></yellow> <gray>- Updates config on the fly</gray>");
         MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom blacklist <add|remove> <block></yellow> <gray>- Manages the block blacklist</gray>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom remaining <dimension></yellow> <gray>- Shows remaining blocks in the specified dimension</gray>");
+        MessageUtil.sendRawMessage(sender, "<yellow>/blockdoom deleted <dimension></yellow> <gray>- Shows deleted blocks in the specified dimension</gray>");
     }
 
     private void sendStatus(CommandSender sender) {
@@ -189,12 +242,12 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
         List<String> completions = new ArrayList<>();
         if (args.length == 1) {
-            List<String> subs = Arrays.asList("ui", "start", "pause", "skip", "reset", "status", "reload", "config", "blacklist", "forcestart", "forcedelete");
+            List<String> subs = Arrays.asList("ui", "start", "pause", "skip", "reset", "status", "reload", "config", "blacklist", "forcestart", "forcedelete", "remaining", "deleted");
             for (String s : subs) {
                 if (s.startsWith(args[0].toLowerCase())) completions.add(s);
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("config")) {
-            List<String> subs = Arrays.asList("timer", "shownext", "speed", "protect", "autoreload");
+            List<String> subs = Arrays.asList("timer", "shownext", "speed", "protect", "autoreload", "range");
             for (String s : subs) {
                 if (s.startsWith(args[1].toLowerCase())) completions.add(s);
             }
@@ -219,6 +272,13 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             for (Material mat : Material.values()) {
                 if (mat.isBlock() && mat.name().toLowerCase().startsWith(args[1].toLowerCase())) {
                     completions.add(mat.name());
+                }
+            }
+        } else if (args.length >= 2 && (args[0].equalsIgnoreCase("remaining") || args[0].equalsIgnoreCase("deleted"))) {
+            String typed = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+            for (org.bukkit.World w : Bukkit.getWorlds()) {
+                if (w.getName().toLowerCase().startsWith(typed.toLowerCase())) {
+                    completions.add(w.getName());
                 }
             }
         }
