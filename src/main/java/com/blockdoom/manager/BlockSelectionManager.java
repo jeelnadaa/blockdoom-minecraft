@@ -32,28 +32,31 @@ public class BlockSelectionManager {
         int range = configManager.getSelectionRange();
         List<Player> players = dimension.getPlayers();
 
-        // Gather chunk snapshots of chunks within the selection-range (chunks) of any player in this dimension
-        for (Chunk chunk : dimension.getLoadedChunks()) {
-            boolean inRange = false;
-            if (!aroundPlayers || range <= 0 || players.isEmpty()) {
-                inRange = true;
-            } else {
-                int cx = chunk.getX();
-                int cz = chunk.getZ();
-                for (Player player : players) {
-                    int px = player.getLocation().getBlockX() >> 4;
-                    int pz = player.getLocation().getBlockZ() >> 4;
-                    if (Math.abs(cx - px) <= range && Math.abs(cz - pz) <= range) {
-                        inRange = true;
-                        break;
+        // Gather chunk snapshots directly around all active players in this dimension
+        if (aroundPlayers && range > 0 && !players.isEmpty()) {
+            for (Player player : players) {
+                int px = player.getLocation().getBlockX() >> 4;
+                int pz = player.getLocation().getBlockZ() >> 4;
+                for (int dx = -range; dx <= range; dx++) {
+                    for (int dz = -range; dz <= range; dz++) {
+                        int cx = px + dx;
+                        int cz = pz + dz;
+                        try {
+                            snapshots.add(dimension.getChunkAt(cx, cz).getChunkSnapshot());
+                        } catch (Exception e) {
+                            // Safety catch in case coordinate is out of bounds
+                        }
                     }
                 }
             }
-            if (inRange) {
+        } else {
+            // No player range restriction, gather all loaded chunks
+            for (Chunk chunk : dimension.getLoadedChunks()) {
                 snapshots.add(chunk.getChunkSnapshot());
             }
         }
 
+        // Fallback: If snapshots set is empty, scan all loaded chunks in this dimension
         if (snapshots.isEmpty()) {
             for (Chunk chunk : dimension.getLoadedChunks()) {
                 snapshots.add(chunk.getChunkSnapshot());
@@ -80,13 +83,11 @@ public class BlockSelectionManager {
                     for (int z = 0; z < 16; z++) {
                         int worldX = (sX << 4) + x;
                         int worldZ = (sZ << 4) + z;
-                        // Exact block inspection across Y column
                         for (int y = minY; y < maxY; y++) {
                             if (configManager.isProtectPlayerBuilds() && storageManager.isProtected(worldId, worldX, y, worldZ)) {
                                 continue;
                             }
                             Material mat = snapshot.getBlockType(x, y, z);
-                            // Strictly filter to solid blocks (excludes flowers, grass, kelp, vines, fluids, air)
                             if (!mat.isBlock() || !mat.isSolid() || mat.isAir()) {
                                 continue;
                             }
@@ -115,9 +116,54 @@ public class BlockSelectionManager {
                 validCandidates.addAll(materialCounts.keySet());
             }
 
+            // Cross-check: Ensure the material belongs to this dimension's environment
+            World.Environment env = dimension.getEnvironment();
+            validCandidates.removeIf(mat -> !belongsToEnvironment(mat, env));
+
+            // If all candidates were filtered out by cross-check, fallback to allowing any from the original list
+            if (validCandidates.isEmpty()) {
+                for (Map.Entry<Material, Integer> entry : materialCounts.entrySet()) {
+                    if (entry.getValue() >= 10) {
+                        validCandidates.add(entry.getKey());
+                    }
+                }
+                if (validCandidates.isEmpty()) {
+                    validCandidates.addAll(materialCounts.keySet());
+                }
+            }
+
+            if (validCandidates.isEmpty()) {
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
+                return;
+            }
+
             Material selected = validCandidates.get(new Random().nextInt(validCandidates.size()));
             Bukkit.getScheduler().runTask(plugin, () -> callback.accept(selected));
         });
+    }
+
+    public boolean belongsToEnvironment(Material material, World.Environment env) {
+        String name = material.name();
+
+        boolean isNetherExclusive = name.contains("NETHER") || name.contains("SOUL") || 
+                                    name.contains("CRIMSON") || name.contains("WARPED") || 
+                                    name.contains("BASALT") || name.contains("BLACKSTONE") || 
+                                    name.equals("GLOWSTONE") || name.contains("QUARTZ") || 
+                                    name.equals("ANCIENT_DEBRIS") || name.contains("NYLIUM") || 
+                                    name.equals("SHROOMLIGHT") || name.equals("MAGMA_BLOCK") || 
+                                    name.contains("GILDED_BLACKSTONE") || name.equals("CRYING_OBSIDIAN");
+
+        boolean isEndExclusive = name.startsWith("END_") || name.contains("CHORUS") || 
+                                 name.contains("PURPUR") || name.equals("ELYTRA") || 
+                                 name.equals("DRAGON_EGG");
+
+        if (env == World.Environment.NETHER) {
+            return !isEndExclusive;
+        } else if (env == World.Environment.THE_END) {
+            return !isNetherExclusive;
+        } else {
+            return !isNetherExclusive && !isEndExclusive;
+        }
     }
 
     public void getRemainingBlocksAsync(World dimension, Consumer<Set<Material>> callback) {
@@ -151,7 +197,7 @@ public class BlockSelectionManager {
                             if (!mat.isBlock() || !mat.isSolid() || mat.isAir()) {
                                 continue;
                             }
-                            if (blacklist.contains(mat) || storageManager.isMaterialDeletedInWorld(worldId, mat)) {
+                            if (blacklist.contains(mat) || storageManager.isMaterialDeletedInWorld(worldId, mat) || !belongsToEnvironment(mat, dimension.getEnvironment())) {
                                 continue;
                             }
                             remaining.add(mat);
